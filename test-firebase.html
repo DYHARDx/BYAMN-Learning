@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Firebase Configuration</title>
+    <!-- Firebase SDK -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+
+    <!-- Firebase configuration -->
+    <script src="assets/js/firebase.js"></script>
+</head>
+<body>
+    <h1>Test Firebase Configuration</h1>
+    <div id="result"></div>
+
+    <script type="module">
+        // Wait for Firebase to initialize
+        setTimeout(() => {
+            try {
+                if (typeof firebaseServices !== 'undefined') {
+                    document.getElementById('result').innerHTML = '<p style="color: green;">Firebase configuration successful!</p>';
+                    console.log('Firebase Services:', firebaseServices);
+                } else {
+                    document.getElementById('result').innerHTML = '<p style="color: red;">Firebase configuration failed!</p>';
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

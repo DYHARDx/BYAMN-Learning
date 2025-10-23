@@ -1,0 +1,39 @@
+{
+  "name": "byamn-learning",
+  "version": "1.0.0",
+  "description": "Transform YouTube learning into verified achievement with free certificates. Track progress, earn credentials, and advance your career with 200+ expert-led courses.",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "build": "echo \"No build step required\"",
+    "test": "echo \"No test suite configured\" && exit 0",
+    "dev": "npx serve ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/byamn-learning.git"
+  },
+  "keywords": [
+    "learning",
+    "education",
+    "youtube",
+    "courses",
+    "certificates",
+    "firebase",
+    "html",
+    "css",
+    "javascript"
+  ],
+  "author": "BYAMN Learning Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/your-username/byamn-learning/issues"
+  },
+  "homepage": "https://github.com/your-username/byamn-learning#readme",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  },
+  "dependencies": {
+    "firebase": "^9.23.0"
+  }
+}

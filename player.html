@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Player - BYAMN</title>
+    <meta name="description" content="Learn and complete your course lessons.">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="./logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./logo.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./logo.png">
+    <link rel="manifest" href="./favicon/site.webmanifest">
+    <meta name="theme-color" content="#6366f1">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+
+    <!-- Firebase configuration -->
+    <script src="assets/js/firebase.js"></script>
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --accent: #8b5cf6;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #334155;
+        }
+
+        /* Dark mode removed */
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        .header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 0.75rem 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Dark mode removed */
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--light);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        /* Dark mode removed */
+
+        .theme-toggle:hover {
+            transform: rotate(15deg);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-info {
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 50px;
+            color: var(--primary-dark);
+        }
+
+        /* Dark mode removed */
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        /* Dark mode removed */
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Dark mode removed */
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .content-wrapper {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        /* Mobile-specific main content adjustments */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+
+            .content-wrapper {
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 0.75rem;
+            }
+
+            .content-wrapper {
+                gap: 0.75rem;
+            }
+        }
+
+        /* Video Player Section */
+        .video-section {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .video-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .video-card {
+            background: #1e293b;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .video-header {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .video-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .lesson-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .dark .lesson-title {
+            color: #f1f5f9;
+        }
+
+        .progress-badge {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .video-container {
+            position: relative;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio (9 / 16 = 0.5625) */
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .video-container iframe,
+        .video-container video,
+        .video-container .video-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Mobile video container adjustments */
+        @media (max-width: 768px) {
+            .video-container {
+                border-radius: 6px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .video-container {
+                border-radius: 4px;
+            }
+        }
+
+        .video-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            color: #94a3b8;
+        }
+
+        .dark .video-placeholder {
+            background: #334155;
+            color: #64748b;
+        }
+
+        /* Lesson Info Section */
+        .lesson-info {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dark .lesson-info {
+            background: #1e293b;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .info-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .dark .info-title {
+            color: #f1f5f9;
+        }
+
+        .duration {
+            font-size: 0.85rem;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .description {
+            background: rgba(99, 102, 241, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            flex: 1;
+            overflow-y: auto;
+            border-left: 3px solid var(--primary);
+        }
+
+        .dark .description {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .description a {
+            color: var(--primary);
+            text-decoration: underline;
+            font-weight: 500;
+        }
+
+        .description a:hover {
+            color: var(--primary-dark);
+        }
+
+        /* Ensure links open in new tab for better UX */
+        .description a[target="_blank"] {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .description a[target="_blank"]::after {
+            content: "↗";
+            margin-left: 0.25rem;
+            font-size: 0.8em;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            flex: 1;
+            min-width: 120px;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        /* Lessons List Section */
+        .lessons-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .lessons-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dark .lessons-card {
+            background: #1e293b;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .lessons-header {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .lessons-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .lessons-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .dark .lessons-title {
+            color: #f1f5f9;
+        }
+
+        .lessons-count {
+            font-size: 0.85rem;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .progress-overview {
+            padding: 0 1rem 1rem;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .progress-bar-container {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .dark .progress-bar-container {
+            background: #334155;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .lessons-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 1rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .lesson-item {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .dark .lesson-item {
+            background: #334155;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .lesson-item:hover {
+            transform: translateX(4px);
+            border-color: var(--primary);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .lesson-item.error {
+            border-color: var(--error-500);
+            background: var(--error-50);
+            animation: pulseError 2s infinite;
+        }
+
+        @keyframes pulseError {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .lesson-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .dark .lesson-number {
+            background: #475569;
+            color: #94a3b8;
+        }
+
+        .lesson-content {
+            flex: 1;
+        }
+
+        .lesson-name {
+            font-weight: 600;
+            margin-bottom: 0.125rem;
+            color: #1e293b;
+            font-size: 0.95rem;
+        }
+
+        .dark .lesson-name {
+            color: #f1f5f9;
+        }
+
+        .lesson-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .completed .lesson-number {
+            background: var(--success);
+            color: white;
+        }
+
+        .completed .lesson-name {
+            color: var(--success);
+        }
+
+        .active {
+            border-left: 3px solid var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .dark .active {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        /* Loading State */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+        }
+
+        .dark .loading-state {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(99, 102, 241, 0.2);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .dark .loading-text {
+            color: #f1f5f9;
+        }
+
+        .loading-subtext {
+            color: var(--gray);
+        }
+
+        /* Error State */
+        .error-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+        }
+
+        .dark .error-state {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        .error-icon {
+            width: 60px;
+            height: 60px;
+            background: #fee2e2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .dark .error-icon {
+            background: #7f1d1d;
+        }
+
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #dc2626;
+            margin-bottom: 1rem;
+        }
+
+        .dark .error-title {
+            color: #f87171;
+        }
+
+        .error-message {
+            color: #64748b;
+            max-width: 500px;
+            margin-bottom: 2rem;
+        }
+
+        .dark .error-message {
+            color: #94a3b8;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .content-wrapper {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .video-section, .lessons-section {
+                width: 100%;
+            }
+
+            .video-card {
+                height: 400px;
+            }
+
+            /* Adjustments for tablet-sized screens */
+            .header {
+                padding: 0.875rem 1.25rem;
+            }
+
+            .main-content {
+                padding: 1.25rem;
+            }
+
+            .user-info {
+                padding: 0.375rem 0.875rem;
+                font-size: 0.9rem;
+            }
+
+            .btn {
+                padding: 0.45rem 0.875rem;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .user-controls {
+                gap: 0.5rem;
+            }
+
+            .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .video-header, .lessons-header, .lesson-info {
+                padding: 1rem;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn-action {
+                width: 100%;
+            }
+        }
+
+        /* Scrollbar Styling */
+        .lessons-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .lessons-list::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .dark .lessons-list::-webkit-scrollbar-track {
+            background: #334155;
+        }
+
+        .lessons-list::-webkit-scrollbar-thumb {
+            background: #c7d2fe;
+            border-radius: 3px;
+        }
+
+        .dark .lessons-list::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div class="logo-container">
+                    <a href="dashboard.html" class="text-gray-600 hover:text-indigo-600 mr-2 transition-colors">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </a>
+                    <div class="logo">
+                        <img src="./logo.png" alt="BYAMN Logo" class="h-full w-full object-contain">
+                    </div>
+                    <div class="logo-text">BYAMN</div>
+                </div>
+
+                <div class="user-controls">
+                    <span id="user-name" class="user-info">Welcome, Student</span>
+                    <a href="dashboard.html" class="btn btn-primary">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Dashboard
+                    </a>
+                    <button id="logout-btn" class="btn btn-outline">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="loading-state">
+            <div class="spinner"></div>
+            <h3 class="loading-text">Loading course...</h3>
+            <p class="loading-subtext">Please wait while we fetch the course content</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="error-state hidden">
+            <div class="error-icon">
+                <svg class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h3 class="error-title">Error Loading Course</h3>
+            <p class="error-message" id="error-text">Something went wrong while loading the course content.</p>
+            <a href="student-courses.html" class="btn btn-primary">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Courses
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content hidden">
+            <div class="content-wrapper">
+                <!-- Video Player Section -->
+                <div class="video-section">
+                    <div class="video-card">
+                        <div class="video-header">
+                            <h2 id="lesson-title" class="lesson-title">Lesson Title</h2>
+                            <div class="progress-badge">
+                                <span id="progress-percent-top-main">0% Complete</span>
+                            </div>
+                        </div>
+                        <div id="video-container" class="video-container">
+                            <div class="video-placeholder">
+                                <p>Select a lesson to begin</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lesson-info">
+                        <div class="info-header">
+                            <h3 class="info-title">Lesson Description</h3>
+                            <span id="lesson-duration" class="duration">Duration: --</span>
+                        </div>
+                        <div class="description">
+                            <div id="lesson-description">Lesson description will appear here</div>
+                        </div>
+                        <div class="actions">
+                            <a id="certificate-btn" href="certificate.html" class="btn btn-primary btn-action hidden">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                Get Certificate
+                            </a>
+                            <button id="mark-complete-btn" class="btn btn-primary btn-action hidden">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Mark as Complete
+                            </button>
+                            <button id="next-lesson-btn" class="btn btn-outline btn-action hidden">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                                Next Lesson
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lessons List Section -->
+                <div class="lessons-section">
+                    <div class="lessons-card">
+                        <div class="lessons-header">
+                            <h3 class="lessons-title">Course Content</h3>
+                            <span class="lessons-count" id="lessons-count">0 lessons</span>
+                        </div>
+
+                        <div class="progress-overview">
+                            <div class="progress-label">
+                                <span>Overall Progress</span>
+                                <span id="progress-percent-top">0%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div id="lessons-list" class="lessons-list">
+                            <!-- Lessons will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-neutral-900 text-white mt-24 fade-in">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div class="col-span-1 md:col-span-2">
+                        <div class="flex items-center mb-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 flex items-center h-10 w-10">
+                                    <img src="./logo.png" alt="BYAMN Logo" class="h-full w-full object-contain">
+                                </div>
+                                <h1 class="ml-3 font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-2xl">
+                                    BYAMN
+                                </h1>
+                            </div>
+                        </div>
+                        <p class="typography-body text-neutral-300 max-w-md">
+                            Empowering learners worldwide with high-quality, accessible education for the digital age.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 class="typography-h3 mb-4">Platform</h3>
+                        <ul class="space-y-2 text-neutral-300">
+                            <li><a href="./courses.html" class="hover:text-white transition-colors">Courses</a></li>
+                            <li><a href="./verification.html" class="hover:text-white transition-colors">Certificate Verification</a></li>
+                            <li><a href="./about.html" class="hover:text-white transition-colors">About Us</a></li>
+                            <li><a href="./faq.html" class="hover:text-white transition-colors">FAQ</a></li>
+                            <li><a href="./contact.html" class="hover:text-white transition-colors">Contact</a></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="typography-h3 mb-4">Legal</h3>
+                        <ul class="space-y-2 text-neutral-300">
+                            <li><a href="./privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                            <li><a href="./terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="border-t border-neutral-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+                    <p class="text-neutral-300">© 2025 BYAMN. All rights reserved.</p>
+                    <div class="flex space-x-6 mt-4 md:mt-0">
+                        <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                            <span class="sr-only">Facebook</span>
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                            <span class="sr-only">Twitter</span>
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                            <span class="sr-only">LinkedIn</span>
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" clip-rule="evenodd"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Main JavaScript -->
+        <script src="assets/js/main.js"></script>
+
+        <!-- Course Player JavaScript -->
+        <script src="assets/js/course-player.js"></script>
+
+        <!-- Test script to pre-fill course ID for easier testing -->
+        <script>
+            // Pre-fill course ID for testing if none is provided in URL
+            document.addEventListener('DOMContentLoaded', function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const courseId = urlParams.get('courseId');
+
+                // If no course ID is provided, default to course-001 for testing
+                if (!courseId) {
+                    const newUrl = new URL(window.location);
+                    newUrl.searchParams.set('courseId', 'course-001');
+                    window.history.replaceState({}, '', newUrl);
+                }
+            });
+        </script>
+    </div>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate - BYAMN</title>
+    <meta name="description" content="View and download your course completion certificate.">
+    <link rel="icon" type="image/png" href="./logo.png">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="assets/css/styles.css">
+
+    <!-- Firebase SDK -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+
+    <!-- jsPDF for certificate generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- html2canvas for capturing certificate design -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Firebase configuration -->
+    <script src="assets/js/firebase.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&family=Open+Sans:wght@300;400;600&family=Dancing+Script:wght@700&family=Montserrat:wght@800&display=swap" rel="stylesheet">
+
+    <style>
+        /* BASE STYLES */
+        .certificate-body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            font-family: 'Open Sans', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* COLOR PALETTE (Matched to Image) */
+        :root {
+            --frame-color: #9e7f45;
+            --dark-text: #2a2a2a;
+            --light-text: #555;
+            --border-color: #888;
+        }
+
+        /* CERTIFICATE CONTAINER */
+        .certificate-container {
+            width: 950px;
+            height: 680px;
+            padding: 20px;
+            text-align: center;
+            background-color: #ffffff;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+        }
+
+        /* FRAME & INNER CONTENT */
+        .certificate-content {
+            border: 2px solid var(--frame-color);
+            padding: 40px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .top-section { width: 100%; }
+
+        .metadata {
+            display: flex; justify-content: space-between; width: 90%;
+            margin: 0 auto 10px auto; font-size: 13px; color: var(--light-text);
+            padding-bottom: 5px;
+        }
+
+        /* --- BYAMN BRAND STYLING --- */
+        .authority {
+            font-family: 'Montserrat', sans-serif; font-size: 1.8em; color: var(--dark-text);
+            font-weight: 700; margin-bottom: 5px; letter-spacing: 4px; text-transform: uppercase;
+            display: inline-block; padding: 0 10px 10px 10px; position: relative;
+        }
+
+        .authority::after {
+            content: ''; position: absolute; left: 10%; right: 10%; bottom: -5px; height: 1px;
+            background: var(--dark-text);
+        }
+        /* ------------------------------------- */
+
+        /* TITLES & TEXT */
+        .title-block { margin: 30px 0 20px 0; }
+        .award-title { font-family: 'EB Garamond', serif; font-size: 20px; color: var(--dark-text); font-weight: 400; }
+        h1 { font-family: 'EB Garamond', serif; font-size: 80px; color: var(--dark-text); margin: 0px 0 30px 0; font-weight: 700; letter-spacing: 2px; }
+
+        .present-to { font-size: 1em; color: var(--light-text); margin-bottom: 10px; font-style: italic; }
+        #student-name-certificate { font-size: 50px; color: var(--frame-color); margin: 0; font-weight: 700; letter-spacing: 1px; display: inline-block; }
+        .reason { font-size: 15px; margin: 30px auto 0 auto; max-width: 750px; line-height: 1.6; color: var(--dark-text); }
+
+        /* --- SIGNATURES & LOGO PLACEMENT (FINAL ADJUSTMENTS) --- */
+        .signature-area {
+            display: flex;
+            justify-content: space-between;
+            width: 85%;
+            padding-top: 40px;
+        }
+
+        .signature-area .info-block {
+            width: 35%;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            text-align: center;
+        }
+
+        .signature-area .platform-info {
+            width: 30%;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .signature-area span {
+            display: block;
+            border-top: 1px solid var(--border-color);
+            padding-top: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--light-text);
+            margin-top: 5px;
+        }
+
+        /* SIGNATURE TEXT & IMAGES */
+        .signature-text {
+            line-height: 1.2;
+            margin-bottom: 5px;
+        }
+        .founder-sign-text {
+            font-family: 'Dancing Script', cursive; font-size: 32px; color: var(--dark-text); font-weight: 700;
+            margin-bottom: 0;
+            padding-bottom: 5px;
+        }
+        .instructor-name-text {
+            font-family: 'Open Sans', sans-serif; color: var(--dark-text); font-weight: 600; font-size: 16px; margin-top: 5px;
+        }
+
+        /* LOGO/SEAL STYLING (MATCHED) */
+        .seal-img {
+            height: 50px;
+            width: auto;
+            margin: 0 auto 10px auto;
+            display: block;
+        }
+
+        /* Hide default certificate section when custom certificate is shown */
+        .default-certificate { display: none; }
+
+        /* Certificate display area */
+        .certificate-display {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        /* Buttons styling */
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .certificate-container, .certificate-container * {
+                visibility: visible;
+            }
+            .certificate-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                box-shadow: none;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 gap-4">
+                <div class="flex items-center">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 flex items-center h-10 w-10">
+                            <img src="./logo.png" alt="BYAMN Logo" class="h-full w-full object-contain">
+                        </div>
+                        <h1 class="ml-3 font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-2xl">
+                            BYAMN
+                        </h1>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <span id="user-name" class="text-gray-700 font-medium">Welcome, Student</span>
+                    <button id="logout-btn" class="px-4 py-2 rounded-md bg-[#5624d0] hover:bg-[#451db0] text-white font-medium transition duration-300">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Course Certificate</h1>
+            <p class="text-gray-600 mt-2">Congratulations on completing your course!</p>
+        </div>
+
+        <!-- Certificate Display Area -->
+        <div class="certificate-display">
+            <div class="certificate-container" id="certificate-to-download">
+                <div class="certificate-content">
+                    <div class="top-section">
+                        <div class="metadata">
+                            <span id="certificate-uid">UID: CERT-BYAMN-</span>
+                            <span id="issued-date">Issued On: <span id="completion-date-display">-</span></span>
+                        </div>
+
+                        <div class="authority">BYAMN</div>
+
+                        <div class="title-block">
+                            <div class="award-title">PROUDLY CONFERS THIS OFFICIAL</div>
+                            <h1>CERTIFICATE</h1>
+                        </div>
+
+                        <div class="present-to">OF ACADEMIC EXCELLENCE UPON</div>
+
+                        <div id="student-name-certificate">-</div>
+
+                        <p class="reason">
+                            In recognition of successful completion of the <strong id="course-title-certificate">-</strong>, meeting all rigorous standards set by the institution.
+                        </p>
+                    </div>
+
+                    <div class="signature-area">
+                        <div class="info-block">
+                            <div class="signature-text founder-sign-text" id="founder-name">Aman Singh</div>
+                            <span>FOUNDER'S SIGNATURE</span>
+                        </div>
+
+                        <div class="info-block platform-info">
+                            <img src="logo.png" alt="Official Seal Logo" class="seal-img">
+                        </div>
+
+                        <div class="info-block">
+                            <div class="signature-text instructor-name-text" id="instructor-name">-</div>
+                            <span>COURSE CREATOR</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="buttons-container">
+            <button id="download-btn" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all hover-lift pulse-slow">
+                <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+                Download Certificate
+            </button>
+            <button id="share-certificate-btn" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all hover-lift">
+                <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                Share
+            </button>
+            <a id="verify-link" href="verification.html" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all hover-lift">
+                <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Verify
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-neutral-900 text-white mt-24 fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center mb-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 flex items-center h-10 w-10">
+                                <img src="./logo.png" alt="BYAMN Logo" class="h-full w-full object-contain">
+                            </div>
+                            <h1 class="ml-3 font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-2xl">
+                                BYAMN
+                            </h1>
+                        </div>
+                    </div>
+                    <p class="typography-body text-neutral-300 max-w-md">
+                        Empowering learners worldwide with high-quality, accessible education for the digital age.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="typography-h3 mb-4">Platform</h3>
+                    <ul class="space-y-2 text-neutral-300">
+                        <li><a href="courses.html" class="hover:text-white transition-colors">Courses</a></li>
+                        <li><a href="about.html" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="faq.html" class="hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="contact.html" class="hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="typography-h3 mb-4">Legal</h3>
+                    <ul class="space-y-2 text-neutral-300">
+                        <li><a href="privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-neutral-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-neutral-300">© 2025 BYAMN. All rights reserved.</p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                        <span class="sr-only">Facebook</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"></path>
+                        </svg>
+                    </a>
+                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                        <span class="sr-only">Twitter</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
+                        </svg>
+                    </a>
+                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                        <span class="sr-only">LinkedIn</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" clip-rule="evenodd"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Main JavaScript -->
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/certificate.js"></script>
+</body>
+</html>

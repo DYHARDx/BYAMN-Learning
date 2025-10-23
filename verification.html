@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Verification - BYAMN</title>
+    <meta name="description" content="Verify the authenticity of BYAMN course completion certificates.">
+    <link rel="icon" type="image/png" href="./logo.png">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="assets/css/styles.css">
+
+    <!-- Firebase SDK -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+
+    <!-- Firebase configuration -->
+    <script src="assets/js/firebase.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        /* Animation classes */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .pulse-slow {
+            animation: pulse 3s infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .float-animation {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        /* Custom styles for verification page */
+        .verification-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .verification-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .certificate-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 gap-4">
+                <div class="flex items-center">
+                    <a href="index.html" class="text-theme-link text-theme-link-hover mr-4">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </a>
+                    <div class="flex items-center space-x-2">
+                        <div class="h-10 w-10 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center">
+                            <span class="text-white font-bold text-lg">B</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-900">BYAMN</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <span id="user-name" class="text-gray-700 font-medium">Welcome, Guest</span>
+                    <button id="logout-btn" class="px-4 py-2 rounded-md bg-[#5624d0] hover:bg-[#451db0] text-white font-medium transition duration-300 hidden">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-12 fade-in">
+            <div class="flex justify-center mb-6">
+                <div class="certificate-icon w-20 h-20 rounded-full flex items-center justify-center float-animation">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                    </svg>
+                </div>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">Certificate Verification</h1>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">Verify the authenticity of BYAMN course completion certificates with our secure validation system</p>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="max-w-2xl mx-auto bg-blue-50/20 border border-blue-200 rounded-xl p-5 mb-8 fade-in">
+            <div class="flex">
+                <svg class="h-6 w-6 text-blue-500 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                    <h3 class="font-bold text-blue-800 mb-1">Security Notice</h3>
+                    <p class="text-blue-700 text-sm">
+                        All certificate verifications are processed through our secure server-side validation system to ensure authenticity and prevent fraud.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Example Certificates -->
+        <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-6 mb-8 verification-card fade-in">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">How to Verify</h2>
+            <p class="text-gray-600 mb-4">Enter your certificate UID below. Certificate UIDs follow the format: <code class="bg-gray-100 px-2 py-1 rounded">CERT-BYAMN-XXXXX</code></p>
+
+            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <h3 class="font-medium text-gray-900 mb-2">Example Certificate UIDs:</h3>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li class="flex items-center">
+                        <svg class="h-4 w-4 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        CERT-BYAMN-12345
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="h-4 w-4 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        CERT-BYAMN-67890
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="h-4 w-4 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        CERT-BYAMN-ABCDE
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Verification Form -->
+        <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden mb-8 verification-card fade-in">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Verify Certificate</h2>
+                <p class="text-gray-600 mb-6">Enter the certificate UID to verify its authenticity</p>
+
+                <form id="verification-form">
+                    <div class="mb-6">
+                        <label for="certificate-uid" class="block text-sm font-medium text-gray-700 mb-2">Certificate UID</label>
+                        <input type="text" id="certificate-uid" placeholder="e.g. CERT-BYAMN-12345" required class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                    </div>
+
+                    <div class="flex justify-center">
+                        <button type="submit" id="verify-btn" class="px-6 py-3 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium transition duration-300 transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-lg hover:shadow-xl">
+                            <span>Verify Certificate</span>
+                            <svg class="inline-block ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Verification Result -->
+        <div id="verification-result" class="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden hidden fade-in">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Verification Result</h2>
+
+                <div id="result-content">
+                    <!-- Result will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-neutral-900 text-white mt-24 fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center mb-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="h-10 w-10 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center">
+                                <span class="text-white font-bold text-lg">B</span>
+                            </div>
+                            <span class="text-xl font-bold text-white">BYAMN</span>
+                        </div>
+                    </div>
+                    <p class="typography-body text-neutral-300 max-w-md">
+                        Empowering learners worldwide with high-quality, accessible education for the digital age.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="typography-h3 mb-4">Platform</h3>
+                    <ul class="space-y-2 text-neutral-300">
+                        <li><a href="courses.html" class="hover:text-white transition-colors">Courses</a></li>
+                        <li><a href="about.html" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="faq.html" class="hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="contact.html" class="hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="typography-h3 mb-4">Legal</h3>
+                    <ul class="space-y-2 text-neutral-300">
+                        <li><a href="privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-neutral-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-neutral-300">© 2025 BYAMN. All rights reserved.</p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                        <span class="sr-only">Facebook</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"></path>
+                        </svg>
+                    </a>
+                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                        <span class="sr-only">Twitter</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
+                        </svg>
+                    </a>
+                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                        <span class="sr-only">LinkedIn</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" clip-rule="evenodd"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Main JavaScript -->
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/verification.js"></script>
+</body>
+</html>

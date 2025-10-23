@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - BYAMN</title>
+    <meta name="description" content="Privacy Policy for BYAMN platform, explaining how we collect, use, and protect your personal information.">
+    <link rel="icon" type="image/png" href="./logo.png">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
+    <!-- Header -->
+    <header class="bg-white/90/90 backdrop-blur-sm shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo and site name -->
+                <div class="flex items-center">
+                    <div class="flex items-center space-x-2">
+                        <div class="h-10 w-10 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center">
+                            <span class="text-white font-bold text-lg">B</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-900">BYAMN</span>
+                    </div>
+                </div>
+                
+                <!-- Desktop Navigation - hidden on mobile -->
+                <nav class="hidden md:flex space-x-1">
+                    <a href="index.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors duration-300">Home</a>
+                    <a href="courses.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors duration-300">Courses</a>
+                    <a href="about.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors duration-300">About</a>
+                    <a href="faq.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors duration-300">FAQ</a>
+                    <a href="contact.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors duration-300">Contact</a>
+                </nav>
+                
+                <!-- User Actions Section -->
+                <div class="flex items-center space-x-3">
+                    <!-- Mobile menu button - only visible on mobile -->
+                    <button id="mobile-menu-button" class="md:hidden p-2 rounded-lg bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors" aria-label="Toggle menu">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    
+                    <!-- User-specific actions - shown only on desktop -->
+                    <div id="user-actions-desktop" class="hidden md:flex items-center space-x-3">
+                        <a href="auth/login.html" class="btn btn-outline">Login</a>
+                        <a href="auth/register.html" class="btn btn-primary">Get Started</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mobile Navigation - only visible when menu is open -->
+            <div id="mobile-menu" class="md:hidden py-4 border-t border-neutral-200 hidden">
+                <div class="flex flex-col space-y-3">
+                    <a href="index.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors">Home</a>
+                    <a href="courses.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors">Courses</a>
+                    <a href="about.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors">About</a>
+                    <a href="faq.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors">FAQ</a>
+                    <a href="contact.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors">Contact</a>
+                    
+                    <!-- Mobile user actions -->
+                    <div id="user-actions-mobile" class="pt-4 border-t border-neutral-200 space-y-3">
+                        <a href="auth/login.html" class="block w-full text-center btn btn-outline">Login</a>
+                        <a href="auth/register.html" class="block w-full text-center btn btn-primary">Get Started</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-4xl font-bold text-gray-900 mb-8 text-center">Privacy Policy</h1>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+                <p class="text-gray-600 mb-6">
+                    Last updated: October 10, 2025
+                </p>
+                
+                <p class="text-gray-600 mb-6">
+                    BYAMN ("us", "we", or "our") operates the BYAMN website (the "Service"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.
+                </p>
+                
+                <p class="text-gray-600 mb-8">
+                    We use your data to provide and improve the Service. By using the Service, you agree to the collection and use of information in accordance with this policy.
+                </p>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Information Collection And Use</h2>
+                <p class="text-gray-600 mb-6">
+                    We collect several different types of information for various purposes to provide and improve our Service to you.
+                </p>
+                
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Types of Data Collected</h3>
+                
+                <h4 class="text-lg font-medium text-gray-900 mb-2">Personal Data</h4>
+                <p class="text-gray-600 mb-4">
+                    While using our Service, we may ask you to provide us with certain personally identifiable information that can be used to contact or identify you ("Personal Data"). Personally identifiable information may include, but is not limited to:
+                </p>
+                <ul class="list-disc list-inside text-gray-600 space-y-2 mb-6">
+                    <li>Email address</li>
+                    <li>First name and last name</li>
+                    <li>Usage Data</li>
+                </ul>
+                
+                <h4 class="text-lg font-medium text-gray-900 mb-2">Usage Data</h4>
+                <p class="text-gray-600 mb-6">
+                    We may also collect information that your browser sends whenever you visit our Service or when you access the Service by or through a mobile device ("Usage Data").
+                </p>
+                
+                <p class="text-gray-600 mb-6">
+                    This Usage Data may include information such as your computer's Internet Protocol address (e.g. IP address), browser type, browser version, the pages of our Service that you visit, the time and date of your visit, the time spent on those pages, unique device identifiers and other diagnostic data.
+                </p>
+                
+                <p class="text-gray-600 mb-8">
+                    When you access the Service by or through a mobile device, this Usage Data may include information such as the type of mobile device you use, your mobile device unique ID, the IP address of your mobile device, your mobile operating system, the type of mobile Internet browser you use, unique device identifiers and other diagnostic data.
+                </p>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Use of Data</h2>
+                <p class="text-gray-600 mb-4">
+                    BYAMN uses the collected data for various purposes:
+                </p>
+                <ul class="list-disc list-inside text-gray-600 space-y-2 mb-8">
+                    <li>To provide and maintain the Service</li>
+                    <li>To notify you about changes to our Service</li>
+                    <li>To allow you to participate in interactive features of our Service when you choose to do so</li>
+                    <li>To provide customer care and support</li>
+                    <li>To provide analysis or valuable information so that we can improve the Service</li>
+                    <li>To monitor the usage of the Service</li>
+                    <li>To detect, prevent and address technical issues</li>
+                </ul>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Transfer Of Data</h2>
+                <p class="text-gray-600 mb-6">
+                    Your information, including Personal Data, may be transferred to — and maintained on — computers located outside of your state, province, country or other governmental jurisdiction where the data protection laws may differ than those from your jurisdiction.
+                </p>
+                
+                <p class="text-gray-600 mb-8">
+                    If you are located outside United States and choose to provide information to us, please note that we transfer the data, including Personal Data, to United States and process it there.
+                </p>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Disclosure Of Data</h2>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Legal Requirements</h3>
+                <p class="text-gray-600 mb-6">
+                    BYAMN may disclose your Personal Data in the good faith belief that such action is necessary to:
+                </p>
+                <ul class="list-disc list-inside text-gray-600 space-y-2 mb-8">
+                    <li>To comply with a legal obligation</li>
+                    <li>To protect and defend the rights or property of BYAMN</li>
+                    <li>To prevent or investigate possible wrongdoing in connection with the Service</li>
+                    <li>To protect the personal safety of users of the Service or the public</li>
+                    <li>To protect against legal liability</li>
+                </ul>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Security Of Data</h2>
+                <p class="text-gray-600 mb-8">
+                    The security of your data is important to us, but remember that no method of transmission over the Internet, or method of electronic storage is 100% secure. While we strive to use commercially acceptable means to protect your Personal Data, we cannot guarantee its absolute security.
+                </p>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Service Providers</h2>
+                <p class="text-gray-600 mb-6">
+                    We may employ third party companies and individuals to facilitate our Service ("Service Providers"), to provide the Service on our behalf, to perform Service-related services or to assist us in analyzing how our Service is used.
+                </p>
+                
+                <p class="text-gray-600 mb-8">
+                    These third parties have access to your Personal Data only to perform these tasks on our behalf and are obligated not to disclose or use it for any other purpose.
+                </p>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Links To Other Sites</h2>
+                <p class="text-gray-600 mb-6">
+                    Our Service may contain links to other sites that are not operated by us. If you click on a third party link, you will be directed to that third party's site. We strongly advise you to review the Privacy Policy of every site you visit.
+                </p>
+                
+                <p class="text-gray-600 mb-8">
+                    We have no control over and assume no responsibility for the content, privacy policies or practices of any third party sites or services.
+                </p>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Children's Privacy</h2>
+                <p class="text-gray-600 mb-6">
+                    Our Service does not address anyone under the age of 18 ("Children").
+                </p>
+                
+                <p class="text-gray-600 mb-8">
+                    We do not knowingly collect personally identifiable information from anyone under the age of 18. If you are a parent or guardian and you are aware that your Children has provided us with Personal Data, please contact us. If we become aware that we have collected Personal Data from children without verification of parental consent, we take steps to remove that information from our servers.
+                </p>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Changes To This Privacy Policy</h2>
+                <p class="text-gray-600 mb-6">
+                    We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.
+                </p>
+                
+                <p class="text-gray-600 mb-8">
+                    We will let you know via email and/or a prominent notice on our Service, prior to the change becoming effective and update the "last updated" date at the top of this Privacy Policy.
+                </p>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Contact Us</h2>
+                <p class="text-gray-600">
+                    If you have any questions about this Privacy Policy, please contact us at support@byamn.com.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-neutral-900 text-white mt-24 fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center mb-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="h-10 w-10 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center">
+                                <span class="text-white font-bold text-lg">B</span>
+                            </div>
+                            <span class="text-xl font-bold text-white">BYAMN</span>
+                        </div>
+                    </div>
+                    <p class="typography-body text-neutral-300 max-w-md">
+                        Empowering learners worldwide with high-quality, accessible education for the digital age.
+                    </p>
+                </div>
+                
+                <div>
+                    <h3 class="typography-h3 mb-4">Platform</h3>
+                    <ul class="space-y-2 text-neutral-300">
+                        <li><a href="courses.html" class="hover:text-white transition-colors">Courses</a></li>
+                        <li><a href="about.html" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="faq.html" class="hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="contact.html" class="hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="typography-h3 mb-4">Legal</h3>
+                    <ul class="space-y-2 text-neutral-300">
+                        <li><a href="privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-neutral-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-neutral-300">© 2025 BYAMN. All rights reserved.</p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                        <span class="sr-only">Facebook</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"></path>
+                        </svg>
+                    </a>
+                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                        <span class="sr-only">Twitter</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
+                        </svg>
+                    </a>
+                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
+                        <span class="sr-only">LinkedIn</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" clip-rule="evenodd"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Main JavaScript -->
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
