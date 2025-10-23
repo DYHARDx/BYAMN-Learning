@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # BYAMN Learning Platform
 
 Transform YouTube learning into verified achievement with free certificates. Track progress, earn credentials, and advance your career with 200+ expert-led courses.
@@ -110,3 +111,6 @@ For support or inquiries, please contact us through our [Contact Page](contact.h
 - Thanks to all YouTube content creators whose educational content inspired this platform
 - Firebase for providing a robust backend infrastructure
 - Tailwind CSS for the utility-first CSS framework
+=======
+# BYAMN-Learning
+>>>>>>> 1daf418cdba23f0b9ec4043ccf8683411c737820
