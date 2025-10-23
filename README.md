@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # BYAMN Learning Platform
 
 Transform YouTube learning into verified achievement with free certificates. Track progress, earn credentials, and advance your career with 200+ expert-led courses.
