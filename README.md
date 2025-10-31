@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="main.svg" alt="Main" width="300" />
+</p>
 
 # BYAMN Learning Platform
 
