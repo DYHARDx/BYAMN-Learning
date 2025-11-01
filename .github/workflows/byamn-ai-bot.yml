@@ -1,14 +1,18 @@
 name: BYAMN AI Assistant
 
+permissions:
+  issues: write
+  discussions: write
+
 on:
   discussion:
-    types: [created, edited]
+    types: [created]
   discussion_comment:
-    types: [created, edited]
+    types: [created]
   issues:
-    types: [opened, edited]
+    types: [opened]
   issue_comment:
-    types: [created, edited]
+    types: [created]
 
 jobs:
   ai_reply:
