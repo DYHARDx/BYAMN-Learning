@@ -43,20 +43,30 @@ async function run() {
     const repo = event.repository?.full_name;
     let commentUrl = null;
 
-    if (event.comment?.discussion_id && event.discussion?.number) {
+    // For issue comments, the event structure has a comment with an issue_url
+    if (event.comment?.issue_url) {
+      // Issue or PR comment event
+      // Extract issue number from issue_url and construct proper comment URL
+      const issueUrlParts = event.comment.issue_url.split('/');
+      const issueNumber = issueUrlParts[issueUrlParts.length - 1];
+      commentUrl = `https://api.github.com/repos/${repo}/issues/${issueNumber}/comments`;
+    } 
+    // For discussion comments
+    else if (event.comment?.discussion_id && event.discussion?.number) {
       // Discussion comment event
       commentUrl = `https://api.github.com/repos/${repo}/discussions/${event.discussion.number}/comments`;
     } else if (event.discussion?.number) {
       // Discussion created/edited
       commentUrl = `https://api.github.com/repos/${repo}/discussions/${event.discussion.number}/comments`;
-    } else if (event.issue?.number) {
+    } 
+    // For direct issue events (not comments)
+    else if (event.issue?.number) {
       // Issue event
       commentUrl = `https://api.github.com/repos/${repo}/issues/${event.issue.number}/comments`;
-    } else if (event.comment?.issue_url) {
-      // Issue comment event
-      commentUrl = `${event.comment.issue_url}/comments`;
-    } else if (event.pull_request?.number) {
-      // PR event
+    } 
+    // For PR events
+    else if (event.pull_request?.number) {
+      // PR event - PRs are issues under the hood
       commentUrl = `https://api.github.com/repos/${repo}/issues/${event.pull_request.number}/comments`;
     }
 
