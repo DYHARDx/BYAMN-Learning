@@ -1,8 +1,9 @@
-- Read First This Then Start **https://github.com/DYHARDx/BYAMN-Learning/issues/3#issue-3567237056**
+
 
 # Contributing to BYAMN Learning Platform
 
 Thank you for your interest in contributing to the BYAMN Learning Platform! We welcome contributions from the community to help improve our educational platform.
+- Read First This Then Start **https://github.com/DYHARDx/BYAMN-Learning/issues/3#issue-3567237056**
 
 ## Code of Conduct
 
