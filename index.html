@@ -38,6 +38,9 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- AOS (Animate On Scroll) -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
     <!-- Firebase SDK -->
     <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js"></script>
@@ -47,6 +50,9 @@
 
     <!-- Firebase configuration -->
     <script src="./assets/js/firebase.js"></script>
+
+    <!-- AOS (Animate On Scroll) -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
     <script>
         tailwind.config = {
@@ -149,8 +155,8 @@
 </head>
 <body class="min-h-screen bg-theme-page">
     <!-- Header with navigation and user actions -->
-    <header class="header">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header data-aos-duration="800" class="header">
+        <div data-aos="fade-down" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <!-- Logo and site name -->
                 <div class="flex items-center">
@@ -220,11 +226,11 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <div class="text-center fade-in-up hero rounded-3xl p-8 md:p-16 relative overflow-hidden">
             <!-- Decorative elements -->
-            <div class="absolute top-0 left-0 w-64 h-64 bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-            <div class="absolute top-0 right-0 w-64 h-64 bg-secondary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-            <div class="absolute bottom-10 left-1/2 w-64 h-64 bg-primary-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+            <div data-aos="fade-in" class="absolute top-0 left-0 w-64 h-64 bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+            <div data-aos="fade-in" class="absolute top-0 right-0 w-64 h-64 bg-secondary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+            <div data-aos="fade-in" class="absolute bottom-10 left-1/2 w-64 h-64 bg-primary-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
 
-            <div class="relative z-10">
+            <div data-aos="zoom-in" class="relative z-10">
                 <h1 class="hero-title text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight">
                     Transform Your Future with
                     <span class="block text-gradient-primary mt-3">Expert-Led Learning</span>
@@ -276,14 +282,14 @@
 
         <!-- Features Section -->
         <div class="mt-24 fade-in-up delay-300">
-            <div class="text-center mb-16">
+            <div data-aos="fade-in" class="text-center mb-16">
                 <h2 class="typography-h1 text-theme-heading mb-4">Why Choose BYAMN?</h2>
                 <p class="max-w-2xl mx-auto typography-body-large text-theme-body">
                     We provide the tools and resources you need to succeed in your learning journey
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div data-aos="fade-up" class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Feature 1 -->
                 <div class="feature-card fade-in-up hover-lift">
                     <div class="feature-icon feature-icon-primary">
@@ -327,14 +333,14 @@
 
         <!-- Stats Section -->
         <div class="mt-24 fade-in-up delay-400">
-            <div class="text-center mb-16">
+            <div data-aos="fade-in" class="text-center mb-16">
                 <h2 class="typography-h1 text-theme-heading mb-4">Trusted by Thousands</h2>
                 <p class="max-w-2xl mx-auto typography-body-large text-theme-body">
                     Join our community of learners and professionals
                 </p>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div data-aos="fade-up" class="grid grid-cols-2 md:grid-cols-4 gap-8">
                 <div class="stat-card">
                     <div class="stat-value">50K+</div>
                     <div class="stat-label">Active Students</div>
@@ -356,14 +362,14 @@
 
         <!-- Popular Courses Section -->
         <div class="mt-24 fade-in-up delay-500">
-            <div class="text-center mb-16">
+            <div data-aos="fade-in" class="text-center mb-16">
                 <h2 class="typography-h1 text-theme-heading mb-4">Popular Courses</h2>
                 <p class="max-w-2xl mx-auto typography-body-large text-theme-body">
                     Discover our most enrolled courses loved by thousands of students
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div data-aos="fade-up" class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Course 1 -->
                 <div class="course-card">
                     <div class="h-48 bg-neutral-200 flex items-center justify-center">
@@ -473,8 +479,8 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-neutral-900 text-white mt-24 fade-in">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer data-aos-duration="1000" class="bg-neutral-900 text-white mt-24 fade-in">
+        <div data-aos="fade-up" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div class="col-span-1 md:col-span-2">
                     <div class="flex items-center mb-4">
@@ -537,6 +543,14 @@
             </div>
         </div>
     </footer>
+
+    <!-- Initialize AOS -->
+    <script>
+        AOS.init({
+            duration: 1200, // optional: animation duration in ms
+            once: true      // optional: run animation only once
+        });
+    </script>
 
     <!-- Main JavaScript -->
     <script src="./assets/js/main.js"></script>

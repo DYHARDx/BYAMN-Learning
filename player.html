@@ -97,6 +97,7 @@
             font-weight: 700;
             background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -763,12 +764,16 @@
             background: #4f46e5;
         }
     </style>
+
+     <!-- AOS (Animate On Scroll) -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 </head>
 <body>
     <div class="app-container">
         <!-- Header -->
-        <header class="header">
-            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <header data-aos-duration="800" class="header">
+            <div data-aos="fade-down" class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div class="logo-container">
                     <a href="dashboard.html" class="text-gray-600 hover:text-indigo-600 mr-2 transition-colors">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -800,14 +805,14 @@
         </header>
 
         <!-- Loading State -->
-        <div id="loading-state" class="loading-state">
+        <div data-aos="fade-in" id="loading-state" class="loading-state">
             <div class="spinner"></div>
             <h3 class="loading-text">Loading course...</h3>
             <p class="loading-subtext">Please wait while we fetch the course content</p>
         </div>
 
         <!-- Error State -->
-        <div id="error-state" class="error-state hidden">
+        <div data-aos="fade-in" id="error-state" class="error-state hidden">
             <div class="error-icon">
                 <svg class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -900,8 +905,8 @@
         </main>
 
         <!-- Footer -->
-        <footer class="bg-neutral-900 text-white mt-24 fade-in">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer data-aos-duration="1000" class="bg-neutral-900 text-white mt-24 fade-in">
+            <div data-aos="fade-up" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div class="col-span-1 md:col-span-2">
                         <div class="flex items-center mb-4">
@@ -984,6 +989,11 @@
                     newUrl.searchParams.set('courseId', 'course-001');
                     window.history.replaceState({}, '', newUrl);
                 }
+            });
+
+            AOS.init({
+                duration: 1200, // optional: animation duration in ms
+                once: true      // optional: run animation only once
             });
         </script>
     </div>

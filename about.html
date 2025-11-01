@@ -15,11 +15,15 @@
     
     <!-- Custom styles -->
     <link rel="stylesheet" href="assets/css/styles.css">
+
+    <!-- AOS (Animate On Scroll) -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
     <!-- Header -->
-    <header class="bg-white/90 backdrop-blur-sm shadow-sm sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header data-aos-duration="800" class="bg-white/90 backdrop-blur-sm shadow-sm sticky top-0 z-50">
+        <div data-aos="fade-down" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <!-- Logo and site name -->
                 <div class="flex items-center">
@@ -80,7 +84,7 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div class="text-center mb-16">
+        <div data-aos="fade-in" class="text-center mb-16">
             <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">About BYAMN</h1>
             <p class="text-xl text-gray-600 max-w-3xl mx-auto">
                 Transforming the way people learn by turning YouTube content into structured, trackable courses with verified certificates.
@@ -88,7 +92,7 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
-            <div>
+            <div data-aos="fade-right">
                 <h2 class="text-3xl font-bold text-gray-900 mb-4">Our Mission</h2>
                 <p class="text-gray-600 mb-6">
                     At BYAMN, we believe that high-quality educational content should be accessible to everyone, regardless of their financial situation. Our platform transforms freely available YouTube content into structured learning paths, making education more accessible and affordable.
@@ -121,15 +125,15 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-96 flex items-center justify-center">
+            <div  data-aos="fade-left" class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-96 flex items-center justify-center">
                 <span class="text-gray-500">Mission Image</span>
             </div>
         </div>
 
         <div class="bg-white rounded-2xl shadow-lg p-8 mb-16">
-            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">How It Works</h2>
+            <h2 data-aos="fade-in" class="text-3xl font-bold text-gray-900 mb-6 text-center">How It Works</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="text-center">
+                <div data-aos="fade-up" class="text-center">
                     <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100/30">
                         <span class="text-2xl font-bold text-indigo-600">1</span>
                     </div>
@@ -138,7 +142,7 @@
                         Explore our curated collection of YouTube-based courses across various topics and skill levels.
                     </p>
                 </div>
-                <div class="text-center">
+                <div  data-aos="fade-up" class="text-center">
                     <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100/30">
                         <span class="text-2xl font-bold text-indigo-600">2</span>
                     </div>
@@ -147,7 +151,7 @@
                         Watch structured lessons, track your progress, and complete quizzes to reinforce learning.
                     </p>
                 </div>
-                <div class="text-center">
+                <div  data-aos="fade-up" class="text-center">
                     <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100/30">
                         <span class="text-2xl font-bold text-indigo-600">3</span>
                     </div>
@@ -160,17 +164,17 @@
         </div>
 
         <div class="text-center">
-            <h2 class="text-3xl font-bold text-gray-900 mb-6">Join Our Community</h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-10">
+            <h2 data-aos="fade-in" class="text-3xl font-bold text-gray-900 mb-6">Join Our Community</h2>
+            <p data-aos="fade-up" class="text-xl text-gray-600 max-w-3xl mx-auto mb-10">
                 Become part of a growing community of learners who are transforming their lives through accessible education.
             </p>
-            <a href="auth/register.html" class="btn btn-primary text-lg px-8 py-4">Get Started Today</a>
+            <a data-aos="fade-up" href="auth/register.html" class="btn btn-primary text-lg px-8 py-4">Get Started Today</a>
         </div>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-neutral-900 text-white mt-24 fade-in">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer data-aos-duration="1000" class="bg-neutral-900 text-white mt-24 fade-in">
+        <div data-aos="fade-up" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div class="col-span-1 md:col-span-2">
                     <div class="flex items-center mb-4">
@@ -232,6 +236,14 @@
             </div>
         </div>
     </footer>
+
+    <!-- Initialize AOS -->
+    <script>
+        AOS.init({
+            duration: 1200, // optional: animation duration in ms
+            once: true      // optional: run animation only once
+        });
+    </script>
 
     <!-- Main JavaScript -->
     <script src="assets/js/main.js"></script>

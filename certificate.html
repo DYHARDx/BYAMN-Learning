@@ -206,11 +206,15 @@
             }
         }
     </style>
+
+    <!-- AOS (Animate On Scroll) -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 </head>
 <body class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <header class="bg-white shadow-sm sticky top-0 z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header data-aos-duration="800" class="bg-white shadow-sm sticky top-0 z-10">
+        <div data-aos="fade-down" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 gap-4">
                 <div class="flex items-center">
                     <div class="flex items-center">
@@ -235,7 +239,7 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="mb-8">
+        <div data-aos="zoom-in" class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900">Course Certificate</h1>
             <p class="text-gray-600 mt-2">Congratulations on completing your course!</p>
         </div>
@@ -309,8 +313,8 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-neutral-900 text-white mt-24 fade-in">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer data-aos-duration="1000" class="bg-neutral-900 text-white mt-24 fade-in">
+        <div data-aos="fade-up" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div class="col-span-1 md:col-span-2">
                     <div class="flex items-center mb-4">
@@ -372,6 +376,14 @@
             </div>
         </div>
     </footer>
+
+    <!-- Initialize AOS -->
+    <script>
+        AOS.init({
+            duration: 1200, // optional: animation duration in ms
+            once: true      // optional: run animation only once
+        });
+    </script>
 
     <!-- Main JavaScript -->
     <script src="assets/js/main.js"></script>
