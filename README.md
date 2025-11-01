@@ -30,6 +30,8 @@ BYAMN (Build Your Academic Mind Network) is an innovative learning platform that
 
 ## Getting Started
 
+- Read First This Then Start **https://github.com/DYHARDx/BYAMN-Learning/issues/3#issue-3567237056**
+
 ### Prerequisites
 
 - A modern web browser (Chrome, Firefox, Safari, or Edge)
