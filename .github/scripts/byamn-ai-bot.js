@@ -40,17 +40,22 @@ async function run() {
       aiData?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "Couldn't generate a valid response.";
 
+    // --- FIXED URL HANDLING ---
     let commentUrl = null;
-    if (event.discussion) {
-      commentUrl = `${event.discussion.url}/comments`;
-    } else if (event.issue) {
-      commentUrl = `${event.issue.url}/comments`;
-    } else if (event.comment?.issue_url) {
+
+    if (event.discussion && event.discussion.number) {
+      commentUrl = `https://api.github.com/repos/${event.repository.full_name}/discussions/${event.discussion.number}/comments`;
+    } else if (event.issue && event.issue.number) {
+      commentUrl = `https://api.github.com/repos/${event.repository.full_name}/issues/${event.issue.number}/comments`;
+    } else if (event.comment && event.comment.issue_url) {
       commentUrl = `${event.comment.issue_url}/comments`;
     }
 
     if (!commentUrl) {
-      console.error("No valid comment URL found.");
+      console.error(
+        "No valid comment URL found. Event structure:",
+        JSON.stringify(event, null, 2)
+      );
       return;
     }
 
