@@ -6,34 +6,30 @@
     <title>YouTube Learning Courses - BYAMN Verified Achievement</title>
     <meta name="description" content="Explore 200+ YouTube learning courses with verified achievement certificates. Industry expert-led content, progress tracking, and career advancement opportunities."
     <link rel="icon" type="image/png" href="./logo.png">
-
+    
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-
+    
     <!-- Inter font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+    
     <!-- Custom styles -->
     <link rel="stylesheet" href="assets/css/styles.css">
-
+    
     <!-- Firebase SDK -->
-    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
-
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
     <!-- Firebase configuration -->
     <script src="assets/js/firebase.js"></script>
-
-    <!-- AOS (Animate On Scroll) CSS -->
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-
+    
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
         }
-
+        
         /* Enhanced course cards with modern design */
         .course-card {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -46,13 +42,13 @@
             display: flex;
             flex-direction: column;
         }
-
+        
         .course-card:hover {
             transform: translateY(-8px);
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
             border-color: #c7d2fe;
         }
-
+        
         /* Category filter buttons with improved design */
         .category-btn {
             transition: all 0.2s ease;
@@ -64,20 +60,20 @@
             border: 1px solid #e5e7eb;
             font-size: 0.9rem;
         }
-
+        
         .category-btn:hover {
             background: #f3f4f6;
             color: #111827;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         }
-
+        
         .category-btn.active {
             background: #4f46e5;
             color: white;
             border-color: #4f46e5;
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
         }
-
+        
         /* Search bar styling with enhanced design */
         .search-bar {
             border-radius: 50px;
@@ -87,30 +83,30 @@
             border: 2px solid #e5e7eb;
             transition: all 0.2s ease;
         }
-
+        
         .search-bar:focus {
             box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
             border-color: #818cf8;
         }
-
+        
         /* Course image container with improved styling */
         .course-image-container {
             height: 200px;
             overflow: hidden;
             position: relative;
         }
-
+        
         .course-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
+        
         .course-card:hover .course-image {
             transform: scale(1.05);
         }
-
+        
         /* Badge styling with enhanced design */
         .badge {
             font-size: 0.75rem;
@@ -120,12 +116,12 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
-
+        
         .badge-primary {
             background-color: #e0e7ff;
             color: #4f46e5;
         }
-
+        
         /* Course content styling with improved typography */
         .course-card-content {
             padding: 1.75rem;
@@ -133,7 +129,7 @@
             display: flex;
             flex-direction: column;
         }
-
+        
         .course-card-title {
             font-size: 1.25rem;
             font-weight: 800;
@@ -141,7 +137,7 @@
             line-height: 1.4;
             margin-bottom: 0.75rem;
         }
-
+        
         .course-card-description {
             color: #6b7280;
             font-size: 0.95rem;
@@ -150,12 +146,11 @@
             flex-grow: 1;
             display: -webkit-box;
             -webkit-line-clamp: 2;
-            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
+        
         /* Course meta styling with improved layout */
         .course-card-meta {
             display: flex;
@@ -164,13 +159,13 @@
             padding-top: 1rem;
             border-top: 1px solid #f3f4f6;
         }
-
+        
         .course-card-price {
             font-weight: 800;
             color: #111827;
             font-size: 1.25rem;
         }
-
+        
         /* Button styling with enhanced design */
         .btn {
             display: inline-flex;
@@ -186,18 +181,18 @@
             line-height: 1.25rem;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         }
-
+        
         .btn-primary {
             background-color: #4f46e5;
             color: white;
         }
-
+        
         .btn-primary:hover {
             background-color: #4338ca;
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(79, 70, 229, 0.2);
         }
-
+        
         /* Loading spinner with enhanced design */
         .loading-spinner {
             width: 2.5rem;
@@ -207,12 +202,12 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
+        
         /* Sorting dropdown styling */
         #sort-options {
             border-radius: 0.75rem;
@@ -225,28 +220,28 @@
             transition: all 0.2s ease;
             min-width: 180px;
         }
-
+        
         #sort-options:focus {
             border-color: #818cf8;
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
             outline: none;
         }
-
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .course-card-title {
                 font-size: 1.125rem;
             }
-
+            
             .course-card-content {
                 padding: 1.25rem;
             }
-
+            
             .category-btn {
                 padding: 6px 16px;
                 font-size: 0.875rem;
             }
-
+            
             /* Responsive adjustments for filter controls */
             @media (max-width: 768px) {
                 #sort-options {
@@ -260,8 +255,8 @@
 </head>
 <body class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <header data-aos-duration="800" class="bg-white shadow-sm">
-        <div data-aos="fade-down" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <!-- Logo and site name -->
                 <div class="flex items-center">
@@ -274,7 +269,7 @@
                         </h1>
                     </div>
                 </div>
-
+                
                 <!-- Desktop Navigation - hidden on mobile -->
                 <nav class="hidden md:flex space-x-1">
                     <a href="index.html" class="px-3 py-2 rounded-lg text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-300">Home</a>
@@ -283,7 +278,7 @@
                     <a href="faq.html" class="px-3 py-2 rounded-lg text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-300">FAQ</a>
                     <a href="contact.html" class="px-3 py-2 rounded-lg text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-300">Contact</a>
                 </nav>
-
+                
                 <!-- User Actions Section -->
                 <div class="flex items-center space-x-3">
                     <!-- Mobile menu button - only visible on mobile -->
@@ -292,7 +287,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
                     </button>
-
+                    
                     <!-- User-specific actions - shown only on desktop -->
                     <div id="user-actions-desktop" class="hidden md:flex items-center space-x-3">
                         <a href="auth/login.html" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-colors">Login</a>
@@ -300,7 +295,7 @@
                     </div>
                 </div>
             </div>
-
+            
             <!-- Mobile Navigation - only visible when menu is open -->
             <div id="mobile-menu" class="md:hidden py-4 border-t border-gray-200 hidden">
                 <div class="flex flex-col space-y-3">
@@ -309,7 +304,7 @@
                     <a href="about.html" class="px-3 py-2 rounded-lg text-gray-700 hover:text-indigo-600 font-medium transition-colors">About</a>
                     <a href="faq.html" class="px-3 py-2 rounded-lg text-gray-700 hover:text-indigo-600 font-medium transition-colors">FAQ</a>
                     <a href="contact.html" class="px-3 py-2 rounded-lg text-gray-700 hover:text-indigo-600 font-medium transition-colors">Contact</a>
-
+                    
                     <!-- Mobile user actions -->
                     <div id="user-actions-mobile" class="pt-4 border-t border-gray-200 space-y-3">
                         <a href="auth/login.html" class="block w-full text-center px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-colors">
@@ -326,7 +321,7 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div data-aos="zoom-in" class="mb-12 text-center">
+        <div class="mb-12 text-center">
             <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">Expand Your Knowledge</h1>
             <p class="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">Discover our expertly crafted courses designed to help you master new skills and advance your career.</p>
         </div>
@@ -341,10 +336,10 @@
                             <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
                         </svg>
                     </div>
-                    <input
-                        type="text"
-                        id="course-search"
-                        placeholder="Search courses by title, category, or instructor..."
+                    <input 
+                        type="text" 
+                        id="course-search" 
+                        placeholder="Search courses by title, category, or instructor..." 
                         class="block w-full pl-12 pr-4 py-5 border border-gray-300 rounded-xl bg-white text-gray-900 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 search-bar"
                     >
                 </div>
@@ -356,7 +351,7 @@
                 <div class="flex flex-wrap justify-center gap-3" id="category-filters">
                     <!-- Category filters will be loaded here dynamically -->
                 </div>
-
+                
                 <!-- Sorting Dropdown -->
                 <div class="relative">
                     <select id="sort-options" class="appearance-none bg-white border border-gray-300 rounded-lg py-3 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
@@ -386,8 +381,8 @@
     </main>
 
     <!-- Footer -->
-    <footer data-aos-duration="1000" class="bg-neutral-900 text-white mt-24 fade-in">
-        <div data-aos="fade-up" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer class="bg-neutral-900 text-white mt-24 fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div class="col-span-1 md:col-span-2">
                     <div class="flex items-center mb-4">
@@ -404,7 +399,7 @@
                         Empowering learners worldwide with high-quality, accessible education for the digital age.
                     </p>
                 </div>
-
+                
                 <div>
                     <h3 class="typography-h3 mb-4">Platform</h3>
                     <ul class="space-y-2 text-neutral-300">
@@ -414,7 +409,7 @@
                         <li><a href="contact.html" class="hover:text-white transition-colors">Contact</a></li>
                     </ul>
                 </div>
-
+                
                 <div>
                     <h3 class="typography-h3 mb-4">Legal</h3>
                     <ul class="space-y-2 text-neutral-300">
@@ -423,7 +418,7 @@
                     </ul>
                 </div>
             </div>
-
+            
             <div class="border-t border-neutral-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
                 <p class="text-neutral-300">© 2025 BYAMN. All rights reserved.</p>
                 <div class="flex space-x-6 mt-4 md:mt-0">
