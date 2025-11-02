@@ -1,266 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAQ - YouTube Learning Verified Achievement | BYAMN</title>
-    <meta name="description" content="Frequently asked questions about BYAMN's YouTube learning platform, verified achievement certificates, courses, and learning process for career advancement."
-    <link rel="icon" type="image/png" href="./logo.png">
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Inter font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Custom styles -->
-    <link rel="stylesheet" href="assets/css/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ - YouTube Learning Verified Achievement | BYAMN</title>
+  <meta name="description" content="Frequently asked questions about BYAMN's YouTube learning platform, verified achievement certificates, courses, and learning process for career advancement.">
+  <link rel="icon" type="image/png" href="./logo.png">
 
-    <!-- AOS (Animate On Scroll) -->
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- AOS (Animate On Scroll) -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    details[open] summary svg { transform: rotate(180deg); }
+    summary::-webkit-details-marker { display: none; }
+  </style>
 </head>
+
 <body class="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
-    <!-- Header -->
-    <header data-aos-duration="800" class="bg-white/90/90 backdrop-blur-sm shadow-sm sticky top-0 z-50">
-        <div data-aos="fade-down" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <!-- Logo and site name -->
-                <div class="flex items-center">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 flex items-center h-10 w-10">
-                            <img src="./logo.png" alt="BYAMN Logo" class="h-full w-full object-contain">
-                        </div>
-                        <h1 class="ml-3 font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-2xl">
-                            BYAMN
-                        </h1>
-                    </div>
-                </div>
-                
-                <!-- Desktop Navigation - hidden on mobile -->
-                <nav class="hidden md:flex space-x-1">
-                    <a href="index.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors duration-300">Home</a>
-                    <a href="courses.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors duration-300">Courses</a>
-                    <a href="about.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors duration-300">About</a>
-                    <a href="faq.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors duration-300">FAQ</a>
-                    <a href="contact.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors duration-300">Contact</a>
-                </nav>
-                
-                <!-- User Actions Section -->
-                <div class="flex items-center space-x-3">
-                    <!-- Mobile menu button - only visible on mobile -->
-                    <button id="mobile-menu-button" class="md:hidden p-2 rounded-lg bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors" aria-label="Toggle menu">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
-                    
-                    <!-- User-specific actions - shown only on desktop -->
-                    <div id="user-actions-desktop" class="hidden md:flex items-center space-x-3">
-                        <a href="auth/login.html" class="btn btn-outline">Login</a>
-                        <a href="auth/register.html" class="btn btn-primary">Get Started</a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Mobile Navigation - only visible when menu is open -->
-            <div id="mobile-menu" class="md:hidden py-4 border-t border-neutral-200 hidden">
-                <div class="flex flex-col space-y-3">
-                    <a href="index.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors">Home</a>
-                    <a href="courses.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors">Courses</a>
-                    <a href="about.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors">About</a>
-                    <a href="faq.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors">FAQ</a>
-                    <a href="contact.html" class="px-3 py-2 rounded-lg text-neutral-600 hover:text-primary-600 font-medium transition-colors">Contact</a>
-                    
-                    <!-- Mobile user actions -->
-                    <div id="user-actions-mobile" class="pt-4 border-t border-neutral-200 space-y-3">
-                        <a href="auth/login.html" class="block w-full text-center btn btn-outline">Login</a>
-                        <a href="auth/register.html" class="block w-full text-center btn btn-primary">Get Started</a>
-                    </div>
-                </div>
-            </div>
+  <!-- Header -->
+  <header data-aos="fade-down" class="bg-white/90 backdrop-blur-sm shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-4">
+        <div class="flex items-center">
+          <img src="./logo.png" alt="BYAMN Logo" class="h-10 w-10 object-contain">
+          <h1 class="ml-3 font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-2xl">BYAMN</h1>
         </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div data-aos="zoom-in" class="text-center mb-16">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h1>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                Find answers to common questions about BYAMN platform, courses, and certificates.
-            </p>
+        <nav class="hidden md:flex space-x-4">
+          <a href="index.html" class="hover:text-indigo-600 font-medium">Home</a>
+          <a href="courses.html" class="hover:text-indigo-600 font-medium">Courses</a>
+          <a href="about.html" class="hover:text-indigo-600 font-medium">About</a>
+          <a href="faq.html" class="text-indigo-600 font-semibold">FAQ</a>
+          <a href="contact.html" class="hover:text-indigo-600 font-medium">Contact</a>
+        </nav>
+        <div class="hidden md:flex space-x-3">
+          <a href="auth/login.html" class="px-4 py-2 border border-indigo-500 text-indigo-600 rounded-lg hover:bg-indigo-50">Login</a>
+          <a href="auth/register.html" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Get Started</a>
         </div>
+      </div>
+    </div>
+  </header>
 
-        <div class="max-w-3xl mx-auto">
-            <div data-aos="fade-up" class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                <div class="p-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">What is BYAMN?</h2>
-                    <p class="text-gray-600">
-                        BYAMN (Bring Your Academic Mindset Now) is an innovative learning platform that transforms YouTube content into structured courses with progress tracking and verified certificates. We believe in making quality education accessible to everyone, regardless of their financial situation.
-                    </p>
-                </div>
-            </div>
+  <!-- Main -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div data-aos="zoom-in" class="text-center mb-16">
+      <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h1>
+      <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+        Find answers to common questions about BYAMN’s platform, courses, and certificates.
+      </p>
+    </div>
 
-            <div data-aos="fade-up" class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                <div class="p-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">Are the certificates really free?</h2>
-                    <p class="text-gray-600">
-                        Yes! All certificates issued by BYAMN are completely free. We don't charge any fees for course enrollment or certificate issuance. Our mission is to make education accessible to everyone.
-                    </p>
-                </div>
-            </div>
-
-            <div data-aos="fade-up" class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                <div class="p-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">How do I enroll in a course?</h2>
-                    <p class="text-gray-600">
-                        To enroll in a course:
-                    </p>
-                    <ol class="list-decimal list-inside text-gray-600 space-y-2 mt-2">
-                        <li>Create a free account on BYAMN</li>
-                        <li>Browse our course catalog</li>
-                        <li>Click on any course you're interested in</li>
-                        <li>Click the "Enroll Now" button</li>
-                        <li>Start learning immediately!</li>
-                    </ol>
-                </div>
-            </div>
-
-            <div data-aos="fade-up" class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                <div class="p-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">How does progress tracking work?</h2>
-                    <p class="text-gray-600">
-                        Our progress tracking system allows you to:
-                    </p>
-                    <ul class="list-disc list-inside text-gray-600 space-y-2 mt-2">
-                        <li>Mark lessons as complete as you finish them</li>
-                        <li>See your overall progress percentage for each course</li>
-                        <li>Track which lessons you've completed</li>
-                        <li>Resume learning from where you left off</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div data-aos="fade-up" class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                <div class="p-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">How long do I have to complete a course?</h2>
-                    <p class="text-gray-600">
-                        There's no time limit for completing courses. You can learn at your own pace and take as much time as you need. Your progress is saved automatically, so you can come back anytime to continue where you left off.
-                    </p>
-                </div>
-            </div>
-
-            <div data-aos="fade-up" class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                <div class="p-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">Are the courses self-paced?</h2>
-                    <p class="text-gray-600">
-                        Yes, all BYAMN courses are self-paced. You can start, pause, and resume your learning whenever it's convenient for you. There are no fixed schedules or deadlines to worry about.
-                    </p>
-                </div>
-            </div>
-
-            <div data-aos="fade-up" class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                <div class="p-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">Can I download the certificates?</h2>
-                    <p class="text-gray-600">
-                        Yes, once you complete a course, you can download your certificate as a PDF file. You can also share your certificate directly on social media platforms or add it to your LinkedIn profile.
-                    </p>
-                </div>
-            </div>
-
-            <div data-aos="fade-up" class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                <div class="p-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">How do I contact support?</h2>
-                    <p class="text-gray-600">
-                        If you have any questions or need assistance, you can reach our support team through:
-                    </p>
-                    <ul class="list-disc list-inside text-gray-600 space-y-2 mt-2">
-                        <li>Email: support@byamn.com</li>
-                        <li>Contact form on our <a href="contact.html" class="text-indigo-600 hover:underline">Contact page</a></li>
-                        <li>Live chat (available during business hours)</li>
-                    </ul>
-                    <p class="text-gray-600 mt-2">
-                        We typically respond to all inquiries within 24 hours.
-                    </p>
-                </div>
-            </div>
+    <!-- Accordion Section -->
+    <div class="space-y-4">
+      <!-- Each FAQ item -->
+      <details data-aos="fade-up" class="bg-white rounded-2xl shadow-md overflow-hidden transition-all duration-300">
+        <summary class="cursor-pointer flex justify-between items-center p-6 text-lg font-semibold text-gray-900">
+          What is BYAMN?
+          <svg class="w-5 h-5 text-indigo-600 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <div class="px-6 pb-6 text-gray-600">
+           BYAMN (Bring Your Academic Mindset Now) is an innovative learning platform that transforms YouTube content into structured courses with progress tracking and verified certificates. We believe in making quality education accessible to everyone, regardless of their financial situation.
         </div>
-    </main>
+      </details>
 
-    <!-- Footer -->
-    <footer data-aos-duration="1000" class="bg-neutral-900 text-white mt-24 fade-in">
-        <div data-aos="fade-up" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div class="col-span-1 md:col-span-2">
-                    <div class="flex items-center mb-4">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 flex items-center h-10 w-10">
-                                <img src="./logo.png" alt="BYAMN Logo" class="h-full w-full object-contain">
-                            </div>
-                            <h1 class="ml-3 font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-2xl">
-                                BYAMN
-                            </h1>
-                        </div>
-                    </div>
-                    <p class="typography-body text-neutral-300 max-w-md">
-                        Empowering learners worldwide with high-quality, accessible education for the digital age.
-                    </p>
-                </div>
-                
-                <div>
-                    <h3 class="typography-h3 mb-4">Platform</h3>
-                    <ul class="space-y-2 text-neutral-300">
-                        <li><a href="courses.html" class="hover:text-white transition-colors">Courses</a></li>
-                        <li><a href="about.html" class="hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="faq.html" class="hover:text-white transition-colors">FAQ</a></li>
-                        <li><a href="contact.html" class="hover:text-white transition-colors">Contact</a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h3 class="typography-h3 mb-4">Legal</h3>
-                    <ul class="space-y-2 text-neutral-300">
-                        <li><a href="privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="border-t border-neutral-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-neutral-300">© 2025 BYAMN. All rights reserved.</p>
-                <div class="flex space-x-6 mt-4 md:mt-0">
-                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
-                        <span class="sr-only">Facebook</span>
-                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"></path>
-                        </svg>
-                    </a>
-                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
-                        <span class="sr-only">Twitter</span>
-                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
-                        </svg>
-                    </a>
-                    <a href="#" class="text-neutral-300 hover:text-white transition-colors">
-                        <span class="sr-only">LinkedIn</span>
-                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" clip-rule="evenodd"></path>
-                        </svg>
-                    </a>
-                </div>
-            </div>
+      <details data-aos="fade-up" class="bg-white rounded-2xl shadow-md overflow-hidden">
+        <summary class="cursor-pointer flex justify-between items-center p-6 text-lg font-semibold text-gray-900">
+          Are the certificates really free?
+          <svg class="w-5 h-5 text-indigo-600 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <div class="px-6 pb-6 text-gray-600">
+           Yes! All certificates issued by BYAMN are completely free. We don't charge any fees for course enrollment or certificate issuance. Our mission is to make education accessible to everyone.
         </div>
-    </footer>
+      </details>
 
-    <!-- Initialize AOS -->
-    <script>
-        AOS.init({
-            duration: 1200, // optional: animation duration in ms
-            once: true      // optional: run animation only once
-        });
-    </script>
+      <details data-aos="fade-up" class="bg-white rounded-2xl shadow-md overflow-hidden">
+        <summary class="cursor-pointer flex justify-between items-center p-6 text-lg font-semibold text-gray-900">
+          How do I enroll in a course?
+          <svg class="w-5 h-5 text-indigo-600 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <div class="px-6 pb-6 text-gray-600 space-y-2">
+          <ol class="list-decimal list-inside space-y-1">
+           <li>Create a free account on BYAMN</li>
+            <li>Browse our course catalog</li>
+            <li>Click on any course you're interested in</li>
+            <li>Click the "Enroll Now" button</li>
+            <li>Start learning immediately!</li>
+          </ol>
+        </div>
+      </details>
 
-    <!-- Main JavaScript -->
-    <script src="assets/js/main.js"></script>
+      <details data-aos="fade-up" class="bg-white rounded-2xl shadow-md overflow-hidden">
+        <summary class="cursor-pointer flex justify-between items-center p-6 text-lg font-semibold text-gray-900">
+          How does progress tracking work?
+          <svg class="w-5 h-5 text-indigo-600 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <div class="px-6 pb-6 text-gray-600 space-y-2">
+          <ul class="list-disc list-inside space-y-1">
+             <li>Mark lessons as complete as you finish them</li>
+            <li>See your overall progress percentage for each course</li>
+            <li>Track which lessons you've completed</li>
+            <li>Resume learning from where you left off</li>
+          </ul>
+        </div>
+      </details>
+
+      <details data-aos="fade-up" class="bg-white rounded-2xl shadow-md overflow-hidden">
+        <summary class="cursor-pointer flex justify-between items-center p-6 text-lg font-semibold text-gray-900">
+          How long do I have to complete a course?
+          <svg class="w-5 h-5 text-indigo-600 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <div class="px-6 pb-6 text-gray-600">
+          There's no time limit for completing courses. You can learn at your own pace and take as much time as you need. Your progress is saved automatically, so you can come back anytime to continue where you left off.
+        </div>
+      </details>
+
+      <details data-aos="fade-up" class="bg-white rounded-2xl shadow-md overflow-hidden">
+        <summary class="cursor-pointer flex justify-between items-center p-6 text-lg font-semibold text-gray-900">
+          Are the courses self-paced?
+          <svg class="w-5 h-5 text-indigo-600 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <div class="px-6 pb-6 text-gray-600">
+           Yes, all BYAMN courses are self-paced. You can start, pause, and resume your learning whenever it's convenient for you. There are no fixed schedules or deadlines to worry about.
+        </div>
+      </details>
+
+      <details data-aos="fade-up" class="bg-white rounded-2xl shadow-md overflow-hidden">
+        <summary class="cursor-pointer flex justify-between items-center p-6 text-lg font-semibold text-gray-900">
+          Can I download the certificates?
+          <svg class="w-5 h-5 text-indigo-600 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <div class="px-6 pb-6 text-gray-600">
+           Yes, once you complete a course, you can download your certificate as a PDF file. You can also share your certificate directly on social media platforms or add it to your LinkedIn profile.
+        </div>
+      </details>
+
+      <details data-aos="fade-up" class="bg-white rounded-2xl shadow-md overflow-hidden">
+        <summary class="cursor-pointer flex justify-between items-center p-6 text-lg font-semibold text-gray-900">
+          How do I contact support?
+          <svg class="w-5 h-5 text-indigo-600 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <div class="px-6 pb-6 text-gray-600 space-y-2">
+          <p>Reach our support team through:</p>
+          <ul class="list-disc list-inside space-y-1">
+            <li>Email: <a href="mailto:support@byamn.com" class="text-indigo-600 hover:underline">support@byamn.com</a></li>
+            <li><a href="contact.html" class="text-indigo-600 hover:underline">Contact form</a></li>
+            <li>Live chat (available during business hours)</li>
+          </ul>
+          <p class="mt-2">We respond to most queries within 24 hours.</p>
+        </div>
+      </details>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer data-aos="fade-up" class="bg-neutral-900 text-white mt-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div class="col-span-1 md:col-span-2">
+          <div class="flex items-center mb-4">
+            <img src="./logo.png" alt="BYAMN Logo" class="h-10 w-10">
+            <h1 class="ml-3 font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-2xl">BYAMN</h1>
+          </div>
+          <p class="text-neutral-300 max-w-md">Empowering learners worldwide with accessible, high-quality education for the digital age.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-4">Platform</h3>
+          <ul class="space-y-2 text-neutral-300">
+            <li><a href="courses.html" class="hover:text-white">Courses</a></li>
+            <li><a href="about.html" class="hover:text-white">About Us</a></li>
+            <li><a href="faq.html" class="hover:text-white">FAQ</a></li>
+            <li><a href="contact.html" class="hover:text-white">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-4">Legal</h3>
+          <ul class="space-y-2 text-neutral-300">
+            <li><a href="privacy.html" class="hover:text-white">Privacy Policy</a></li>
+            <li><a href="terms.html" class="hover:text-white">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-neutral-800 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center">
+        <p class="text-neutral-400 text-sm">© 2025 BYAMN. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- AOS Init -->
+  <script>
+    AOS.init({ duration: 1000, once: true });
+  </script>
+
+  <!-- Accordion close others -->
+  <script>
+    document.querySelectorAll("details").forEach((d) => {
+      d.addEventListener("toggle", (e) => {
+        if (d.open) {
+          document.querySelectorAll("details").forEach((other) => {
+            if (other !== d) other.removeAttribute("open");
+          });
+        }
+      });
+    });
+  </script>
 </body>
 </html>
