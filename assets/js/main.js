@@ -1,5 +1,8 @@
 // Main JavaScript file for common functionality across all pages
 
+// Import our auth state manager
+import authState from './auth-state.js';
+
 // Add a function to log activities to Firebase
 function logActivity(activityData) {
     // Only log activities if Firebase is available
@@ -60,11 +63,16 @@ document.addEventListener('DOMContentLoaded', function() {
         mobileMenu.classList.toggle('hidden');
     }
 
-    // Update UI based on auth state
-    function updateAuthUI(user) {
-        if (user) {
+    // Update UI based on auth state using our centralized manager
+    function updateAuthUI(state) {
+        // If still loading, don't update UI yet
+        if (state.isLoading) {
+            return;
+        }
+
+        if (state.isAuthenticated) {
             // User is signed in
-            const userName = user.displayName || user.email;
+            const userName = state.user.displayName || state.user.email;
 
             // Update desktop navigation
             if (userActionsDesktop) {
@@ -81,17 +89,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
                     logoutBtn.addEventListener('click', function() {
-                        // Import Firebase services
-                        if (typeof firebase !== 'undefined' && typeof firebaseServices !== 'undefined') {
-                            firebaseServices.signOut()
-                                .then(() => {
-                                    window.location.href = './index.html';
-                                })
-                                .catch((error) => {
-                                    console.error('Logout error:', error);
-                                    utils.showNotification('Logout failed: ' + error.message, 'error');
-                                });
-                        }
+                        authState.logout()
+                            .then(() => {
+                                window.location.href = './index.html';
+                            })
+                            .catch((error) => {
+                                console.error('Logout error:', error);
+                                utils.showNotification('Logout failed: ' + error.message, 'error');
+                            });
                     });
                 }
             }
@@ -111,17 +116,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
                 if (mobileLogoutBtn) {
                     mobileLogoutBtn.addEventListener('click', function() {
-                        // Import Firebase services
-                        if (typeof firebase !== 'undefined' && typeof firebaseServices !== 'undefined') {
-                            firebaseServices.signOut()
-                                .then(() => {
-                                    window.location.href = './index.html';
-                                })
-                                .catch((error) => {
-                                    console.error('Logout error:', error);
-                                    utils.showNotification('Logout failed: ' + error.message, 'error');
-                                });
-                        }
+                        authState.logout()
+                            .then(() => {
+                                window.location.href = './index.html';
+                            })
+                            .catch((error) => {
+                                console.error('Logout error:', error);
+                                utils.showNotification('Logout failed: ' + error.message, 'error');
+                            });
                     });
                 }
             }
@@ -172,15 +174,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Check auth state
-    // We need to load Firebase first if it's not already loaded
-    if (typeof firebase !== 'undefined') {
-        // Add Firebase auth state listener
-        if (typeof firebaseServices !== 'undefined') {
-            firebaseServices.onAuthStateChanged(function(user) {
-                updateAuthUI(user);
-            });
-        }
+    // Subscribe to auth state changes using our centralized manager
+    if (typeof authState !== 'undefined') {
+        authState.subscribe(updateAuthUI);
     }
 });
 
