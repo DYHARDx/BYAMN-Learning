@@ -4,9 +4,9 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getDatabase } from "firebase/database";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, fetchSignInMethodsForEmail } from "firebase/auth";
+import { getFirestore, doc, collection, getDoc, getDocs, update } from "firebase/firestore";
+import { getDatabase, ref, get, set, push, query, orderByChild, equalTo, remove } from "firebase/database";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -73,48 +73,32 @@ window.firebaseServices = {
     db,
     rtdb,
     app,
-    // Auth methods
-    signInWithEmailAndPassword: (email, password) =>
-        import("firebase/auth").then(({ signInWithEmailAndPassword }) =>
-            signInWithEmailAndPassword(auth, email, password)),
-    createUserWithEmailAndPassword: (email, password) =>
-        import("firebase/auth").then(({ createUserWithEmailAndPassword }) =>
-            createUserWithEmailAndPassword(auth, email, password)),
-    signOut: () =>
-        import("firebase/auth").then(({ signOut }) =>
-            signOut(auth)),
-    onAuthStateChanged: (callback) =>
-        import("firebase/auth").then(({ onAuthStateChanged }) =>
-            onAuthStateChanged(auth, callback)),
-    fetchSignInMethodsForEmail: (email) =>
-        import("firebase/auth").then(({ fetchSignInMethodsForEmail }) =>
-            fetchSignInMethodsForEmail(auth, email)),
+    // Auth methods - directly exported instead of dynamically imported
+    signInWithEmailAndPassword: (email, password) => signInWithEmailAndPassword(auth, email, password),
+    createUserWithEmailAndPassword: (email, password) => createUserWithEmailAndPassword(auth, email, password),
+    signOut: () => signOut(auth),
+    onAuthStateChanged: (callback) => onAuthStateChanged(auth, callback),
+    fetchSignInMethodsForEmail: (email) => fetchSignInMethodsForEmail(auth, email),
 
-    // Database methods
-    getDoc: (ref) =>
-        import("firebase/firestore").then(({ getDoc }) =>
-            getDoc(ref)),
-    getDocs: (query) =>
-        import("firebase/firestore").then(({ getDocs }) =>
-            getDocs(query)),
-    doc: (collection, id) =>
-        import("firebase/firestore").then(({ doc }) =>
-            doc(db, collection, id)),
-    collection: (path) =>
-        import("firebase/firestore").then(({ collection }) =>
-            collection(db, path)),
-    ref: (path) =>
-        import("firebase/database").then(({ ref }) =>
-            ref(rtdb, path)),
-    get: (reference) =>
-        import("firebase/database").then(({ get }) =>
-            get(reference)),
+    // Database methods - directly exported instead of dynamically imported
+    getDoc: (reference) => getDoc(reference),
+    getDocs: (query) => getDocs(query),
+    doc: (path, id) => doc(db, path, id),
+    collection: (path) => collection(db, path),
+    ref: (path) => ref(rtdb, path),
+    get: (reference) => get(reference),
+    set: (reference, data) => set(reference, data),
+    push: (reference) => push(reference),
+    update: (reference, data) => update(reference, data),
+    query: (reference, ...constraints) => query(reference, ...constraints),
+    orderByChild: (path) => orderByChild(path),
+    equalTo: (value) => equalTo(value),
+    remove: (reference) => remove(reference),
 
     // Helper functions for data operations
     getCourses: async () => {
         try {
             // Fetch courses from Realtime Database
-            const { ref, get } = await import("firebase/database");
             const coursesRef = ref(rtdb, 'courses');
             const snapshot = await get(coursesRef);
             const coursesData = snapshot.val();
@@ -148,7 +132,6 @@ window.firebaseServices = {
     getCategories: async () => {
         try {
             // Fetch categories from Realtime Database
-            const { ref, get } = await import("firebase/database");
             const categoriesRef = ref(rtdb, 'categories');
             const snapshot = await get(categoriesRef);
             const categoriesData = snapshot.val();
@@ -173,14 +156,13 @@ window.firebaseServices = {
         try {
             console.log('Attempting to save user data to database:', userData);
             // Ensure we're not creating duplicate entries by checking if user already exists
-            const { ref, get, set, update } = await import("firebase/database");
             const userRef = ref(rtdb, 'users/' + userData.uid);
             const snapshot = await get(userRef);
 
             if (snapshot.exists()) {
                 console.log('User already exists in database, updating instead of creating duplicate');
                 // Update existing user data instead of creating duplicate
-                await update(userRef, userData);
+                await set(userRef, {...snapshot.val(), ...userData});
             } else {
                 // Create new user entry
                 await set(userRef, userData);
@@ -197,7 +179,6 @@ window.firebaseServices = {
     // Function to get a single user
     getUser: async (userId) => {
         try {
-            const { ref, get } = await import("firebase/database");
             const userRef = ref(rtdb, 'users/' + userId);
             const snapshot = await get(userRef);
             const userData = snapshot.val();
@@ -217,7 +198,6 @@ window.firebaseServices = {
         try {
             // Fetch enrollments from Realtime Database for this specific user
             // This is more efficient than fetching all enrollments and filtering
-            const { ref, query, orderByChild, equalTo, get } = await import("firebase/database");
             const enrollmentsRef = ref(rtdb, 'enrollments');
             const enrollmentsQuery = query(enrollmentsRef, orderByChild('userId'), equalTo(userId));
             const snapshot = await get(enrollmentsQuery);
@@ -241,7 +221,6 @@ window.firebaseServices = {
     enrollUserInCourse: async (userId, courseId) => {
         try {
             // First check if enrollment already exists
-            const { ref, get, push, set } = await import("firebase/database");
             const enrollmentsRef = ref(rtdb, 'enrollments');
             const snapshot = await get(enrollmentsRef);
             const enrollmentsData = snapshot.val();
@@ -279,7 +258,6 @@ window.firebaseServices = {
     updateLessonProgress: async (enrollmentId, lessonId, progress) => {
         try {
             // Update enrollment progress in Realtime Database
-            const { ref, get, update } = await import("firebase/database");
             const enrollmentRef = ref(rtdb, 'enrollments/' + enrollmentId);
             const enrollmentSnapshot = await get(enrollmentRef);
             const enrollmentData = enrollmentSnapshot.val();
@@ -302,7 +280,7 @@ window.firebaseServices = {
                 lastAccessed: new Date().toISOString()
             };
 
-            await update(enrollmentRef, updatedData);
+            await set(enrollmentRef, {...enrollmentData, ...updatedData});
             return { ...enrollmentData, ...updatedData };
         } catch (error) {
             console.error('Error updating lesson progress:', error);
@@ -314,7 +292,6 @@ window.firebaseServices = {
     deleteEnrollment: async (enrollmentId, userId) => {
         try {
             // Reference to the enrollment
-            const { ref, get, remove } = await import("firebase/database");
             const enrollmentRef = ref(rtdb, 'enrollments/' + enrollmentId);
 
             // Get the enrollment data to verify ownership
