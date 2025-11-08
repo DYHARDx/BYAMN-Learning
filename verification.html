@@ -69,6 +69,17 @@
         .certificate-icon {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+        
+        /* Rate limit warning */
+        .rate-limit-warning {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -124,7 +135,7 @@
                 <div>
                     <h3 class="font-bold text-blue-800 mb-1">Security Notice</h3>
                     <p class="text-blue-700 text-sm">
-                        All certificate verifications are processed through our secure server-side validation system to ensure authenticity and prevent fraud.
+                        All certificate verifications are processed through our secure server-side validation system to ensure authenticity and prevent fraud. Rate limiting is enforced to prevent abuse.
                     </p>
                 </div>
             </div>
@@ -157,6 +168,13 @@
                         CERT-BYAMN-ABCDE
                     </li>
                 </ul>
+            </div>
+            
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h3 class="font-medium text-yellow-800 mb-2">Rate Limiting</h3>
+                <p class="text-yellow-700 text-sm">
+                    To ensure system stability and prevent abuse, we limit verification requests to 5 per minute per user. If you exceed this limit, you'll need to wait before making additional requests.
+                </p>
             </div>
         </div>
 

@@ -16,6 +16,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const issuedDate = document.getElementById('issued-date');
     const instructorName = document.getElementById('instructor-name');
     
+    // Additional certificate metadata elements
+    const certificateStatus = document.getElementById('certificate-status');
+    const certificateExpiration = document.getElementById('certificate-expiration');
+    
     // Custom certificate name modal elements
     let certificateModal = null;
     let certificateNameInput = null;
@@ -108,6 +112,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update certificate UID
                     if (certificateUid) certificateUid.textContent = 'UID: ' + certId;
                     
+                    // Update certificate metadata
+                    if (certificateStatus) certificateStatus.textContent = 'Active';
+                    if (certificateExpiration) certificateExpiration.textContent = 'Lifetime';
+                    
                     // Update verification link with certificate ID
                     if (verifyLink) {
                         verifyLink.href = `verification.html?certId=${certId}`;
@@ -119,6 +127,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (courseTitleCertificate) courseTitleCertificate.textContent = 'Course Not Found';
                 if (completionDateDisplay) completionDateDisplay.textContent = 'N/A';
                 if (instructorName) instructorName.textContent = 'N/A';
+                if (certificateStatus) certificateStatus.textContent = 'Invalid';
+                if (certificateExpiration) certificateExpiration.textContent = 'N/A';
                 downloadBtn.disabled = true;
                 utils.showNotification('Course not found or not completed', 'error');
             }
@@ -132,6 +142,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (courseTitleCertificate) courseTitleCertificate.textContent = 'Error Loading';
             if (completionDateDisplay) completionDateDisplay.textContent = 'N/A';
             if (instructorName) instructorName.textContent = 'N/A';
+            if (certificateStatus) certificateStatus.textContent = 'Error';
+            if (certificateExpiration) certificateExpiration.textContent = 'N/A';
             downloadBtn.disabled = true;
         });
     }
@@ -282,6 +294,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update certificate UID
                     const certId = enrollment.certificateId || 'CERT-BYAMN-' + Date.now().toString().substr(-5) + Math.floor(1000 + Math.random() * 9000);
                     if (certificateUid) certificateUid.textContent = 'UID: ' + certId;
+                    
+                    // Update certificate metadata
+                    if (certificateStatus) certificateStatus.textContent = 'Active';
+                    if (certificateExpiration) certificateExpiration.textContent = 'Lifetime';
                     
                     // Update verification link with certificate ID
                     if (verifyLink) {
@@ -490,5 +506,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     utils.showNotification('Logout failed: ' + error.message, 'error');
                 });
         });
+    }
+    
+    // Show error message
+    function showError(message) {
+        utils.showNotification(message, 'error');
+        if (studentNameCertificate) studentNameCertificate.textContent = 'Error';
+        if (courseTitleCertificate) courseTitleCertificate.textContent = 'Error Loading';
+        if (completionDateDisplay) completionDateDisplay.textContent = 'N/A';
+        if (instructorName) instructorName.textContent = 'N/A';
+        if (certificateStatus) certificateStatus.textContent = 'Error';
+        if (certificateExpiration) certificateExpiration.textContent = 'N/A';
+        downloadBtn.disabled = true;
     }
 });
