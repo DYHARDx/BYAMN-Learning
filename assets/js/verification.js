@@ -10,6 +10,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const verificationResult = document.getElementById('verification-result');
     const resultContent = document.getElementById('result-content');
     
+    // Rate limiting variables
+    const RATE_LIMIT_WINDOW = 60000; // 1 minute
+    const MAX_VERIFICATIONS_PER_WINDOW = 5;
+    let verificationAttempts = [];
+    
     // Security logging function
     function logSecurityEvent(eventType, details) {
         // In a production environment, this would send to a secure logging service
@@ -19,6 +24,24 @@ document.addEventListener('DOMContentLoaded', function() {
             userAgent: navigator.userAgent,
             url: window.location.href
         });
+    }
+    
+    // Rate limiting function
+    function isRateLimited() {
+        const now = Date.now();
+        // Remove attempts older than the rate limit window
+        verificationAttempts = verificationAttempts.filter(attempt => 
+            now - attempt < RATE_LIMIT_WINDOW
+        );
+        
+        // Check if we've exceeded the limit
+        if (verificationAttempts.length >= MAX_VERIFICATIONS_PER_WINDOW) {
+            return true;
+        }
+        
+        // Add current attempt
+        verificationAttempts.push(now);
+        return false;
     }
     
     // Check auth state
@@ -83,6 +106,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isValidCertificateUid(certificateUid)) {
             utils.showNotification('Invalid certificate UID format', 'error');
             logSecurityEvent('INVALID_CERTIFICATE_FORMAT', { certificateUid: certificateUid });
+            return;
+        }
+        
+        // Check rate limiting
+        if (isRateLimited()) {
+            utils.showNotification('Rate limit exceeded. Please wait before trying again.', 'error');
+            logSecurityEvent('RATE_LIMIT_EXCEEDED', { certificateUid: certificateUid });
             return;
         }
         
@@ -250,7 +280,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         enrollmentId: key,
                         // Add security information
                         verificationTimestamp: new Date().toISOString(),
-                        verificationMethod: 'server-side-validation'
+                        verificationMethod: 'server-side-validation',
+                        // Add certificate metadata
+                        certificateStatus: 'Active',
+                        expirationDate: 'Lifetime'
                     };
                 }
             }
@@ -444,13 +477,23 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p class="font-medium text-gray-900 dark:text-white">${result.issuedOn}</p>
                         </div>
                         
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Status</p>
+                            <p class="font-medium text-gray-900 dark:text-white">${result.certificateStatus}</p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Expiration</p>
+                            <p class="font-medium text-gray-900 dark:text-white">${result.expirationDate}</p>
+                        </div>
+                        
                         <!-- Security Information -->
                         <div class="pt-3 border-t border-green-200 dark:border-green-800">
                             <p class="text-xs text-green-700 dark:text-green-300">
                                 <svg class="inline h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
-                                Verified through secure server-side validation
+                                Verified through secure server-side validation on ${new Date(result.verificationTimestamp).toLocaleString()}
                             </p>
                         </div>
                     </div>
