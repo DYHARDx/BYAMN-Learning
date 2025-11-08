@@ -1,11 +1,4 @@
-// Main JavaScript file for common functionality across all pages
-
-// Import our auth state manager
-import authState from './auth-state.js';
-
-// Add a function to log activities to Firebase
 function logActivity(activityData) {
-    // Only log activities if Firebase is available
     if (typeof firebaseServices !== 'undefined') {
         try {
             const { ref, push, set } = firebaseServices;
@@ -21,8 +14,16 @@ function logActivity(activityData) {
     }
 }
 
-// Theme toggle functionality
 document.addEventListener('DOMContentLoaded', function() {
+
+    // ✅ Redirect to home when clicking logo  
+    const logoElement = document.getElementById('site-logo');
+    if (logoElement) {
+        logoElement.addEventListener('click', function () {
+            window.location.href = './index.html';
+        });
+    }
+
     // Theme toggle elements
     const themeToggle = document.getElementById('theme-toggle');
     const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
@@ -38,279 +39,156 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Set initial theme to light mode only
     function initTheme() {
-        // Ensure dark mode is disabled
         document.documentElement.classList.remove('dark');
         localStorage.setItem('theme', 'light');
-
-        // Hide dark mode icon and show light mode icon
         if (themeToggleDarkIcon) themeToggleDarkIcon.classList.add('hidden');
         if (themeToggleLightIcon) themeToggleLightIcon.classList.remove('hidden');
     }
 
-    // Toggle theme function - now just keeps light mode
     function toggleTheme() {
-        // Always ensure light mode
         document.documentElement.classList.remove('dark');
         localStorage.setItem('theme', 'light');
-
-        // Keep light mode icon visible
         if (themeToggleDarkIcon) themeToggleDarkIcon.classList.add('hidden');
         if (themeToggleLightIcon) themeToggleLightIcon.classList.remove('hidden');
     }
 
-    // Toggle mobile menu function
     function toggleMobileMenu() {
         mobileMenu.classList.toggle('hidden');
     }
 
-    // Update UI based on auth state using our centralized manager
-    function updateAuthUI(state) {
-        // If still loading, don't update UI yet
-        if (state.isLoading) {
-            return;
-        }
+    // Update UI based on auth state
+    function updateAuthUI(user) {
+        if (user) {
+            const userName = user.displayName || user.email;
 
-        if (state.isAuthenticated) {
-            // User is signed in
-            const userName = state.user.displayName || state.user.email;
-
-            // Update desktop navigation
             if (userActionsDesktop) {
                 userActionsDesktop.innerHTML = `
-                    <a href="./dashboard.html" class="btn btn-primary">
-                        Dashboard
-                    </a>
-                    <button id="logout-btn" class="btn btn-outline">
-                        Logout
-                    </button>
+                    <a href="./dashboard.html" class="btn btn-primary">Dashboard</a>
+                    <button id="logout-btn" class="btn btn-outline">Logout</button>
                 `;
-
-                // Add logout event listener
                 const logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
                     logoutBtn.addEventListener('click', function() {
-                        authState.logout()
-                            .then(() => {
-                                window.location.href = './index.html';
-                            })
-                            .catch((error) => {
-                                console.error('Logout error:', error);
-                                utils.showNotification('Logout failed: ' + error.message, 'error');
-                            });
+                        if (typeof firebase !== 'undefined' && typeof firebaseServices !== 'undefined') {
+                            firebaseServices.signOut()
+                                .then(() => window.location.href = './index.html')
+                                .catch((error) => utils.showNotification('Logout failed: ' + error.message, 'error'));
+                        }
                     });
                 }
             }
 
-            // Update mobile navigation
             if (userActionsMobile) {
                 userActionsMobile.innerHTML = `
-                    <a href="./dashboard.html" class="block w-full text-center btn btn-primary mb-2">
-                        Dashboard
-                    </a>
-                    <button id="mobile-logout-btn" class="block w-full text-center btn btn-outline">
-                        Logout
-                    </button>
+                    <a href="./dashboard.html" class="block w-full text-center btn btn-primary mb-2">Dashboard</a>
+                    <button id="mobile-logout-btn" class="block w-full text-center btn btn-outline">Logout</button>
                 `;
-
-                // Add mobile logout event listener
                 const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
                 if (mobileLogoutBtn) {
                     mobileLogoutBtn.addEventListener('click', function() {
-                        authState.logout()
-                            .then(() => {
-                                window.location.href = './index.html';
-                            })
-                            .catch((error) => {
-                                console.error('Logout error:', error);
-                                utils.showNotification('Logout failed: ' + error.message, 'error');
-                            });
+                        if (typeof firebase !== 'undefined' && typeof firebaseServices !== 'undefined') {
+                            firebaseServices.signOut()
+                                .then(() => window.location.href = './index.html')
+                                .catch((error) => utils.showNotification('Logout failed: ' + error.message, 'error'));
+                        }
                     });
                 }
             }
         } else {
-            // User is signed out
             if (userActionsDesktop) {
                 userActionsDesktop.innerHTML = `
-                    <a href="./auth/login.html" class="btn btn-outline">
-                        Login
-                    </a>
-                    <a href="./auth/register.html" class="btn btn-primary">
-                        Get Started
-                    </a>
+                    <a href="./auth/login.html" class="btn btn-outline">Login</a>
+                    <a href="./auth/register.html" class="btn btn-primary">Get Started</a>
                 `;
             }
-
             if (userActionsMobile) {
                 userActionsMobile.innerHTML = `
-                    <a href="./auth/login.html" class="block w-full text-center btn btn-outline mb-2">
-                        Login
-                    </a>
-                    <a href="./auth/register.html" class="block w-full text-center btn btn-primary">
-                        Get Started
-                    </a>
+                    <a href="./auth/login.html" class="block w-full text-center btn btn-outline mb-2">Login</a>
+                    <a href="./auth/register.html" class="block w-full text-center btn btn-primary">Get Started</a>
                 `;
             }
         }
     }
 
-    // Initialize theme
     initTheme();
 
-    // Add event listeners
-    if (themeToggle) {
-        themeToggle.addEventListener('click', toggleTheme);
-    }
+    if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+    if (mobileMenuButton) mobileMenuButton.addEventListener('click', toggleMobileMenu);
 
-    if (mobileMenuButton) {
-        mobileMenuButton.addEventListener('click', toggleMobileMenu);
-    }
-
-    // Close mobile menu when clicking outside
     document.addEventListener('click', function(event) {
         if (mobileMenu && !mobileMenu.classList.contains('hidden') &&
-            !mobileMenu.contains(event.target) &&
-            !mobileMenuButton.contains(event.target)) {
+            !mobileMenu.contains(event.target) && !mobileMenuButton.contains(event.target)) {
             mobileMenu.classList.add('hidden');
         }
     });
 
-    // Subscribe to auth state changes using our centralized manager
-    if (typeof authState !== 'undefined') {
-        authState.subscribe(updateAuthUI);
+    if (typeof firebase !== 'undefined' && typeof firebaseServices !== 'undefined') {
+        firebaseServices.onAuthStateChanged(updateAuthUI);
     }
 });
 
 // Utility functions
 function showNotification(message, type = 'success') {
-    // Remove any existing notifications
     const existingNotification = document.querySelector('.notification-toast');
-    if (existingNotification) {
-        existingNotification.remove();
-    }
-
-    // Create notification element
+    if (existingNotification) existingNotification.remove();
     const notification = document.createElement('div');
-    notification.className = `notification-toast fixed top-6 right-6 px-6 py-4 rounded-xl shadow-xl z-50 transform transition-all duration-300 max-w-sm ${
-        type === 'success' ? 'bg-green-500 text-white' :
-        type === 'error' ? 'bg-red-500 text-white' :
-        type === 'warning' ? 'bg-yellow-500 text-white' :
-        'bg-blue-500 text-white'
-    }`;
+    notification.className = `notification-toast fixed top-6 right-6 px-6 py-4 rounded-xl shadow-xl z-50 max-w-sm ${
+        type === 'success' ? 'bg-green-500' :
+        type === 'error' ? 'bg-red-500' :
+        type === 'warning' ? 'bg-yellow-500' :
+        'bg-blue-500'
+    } text-white`;
     notification.innerHTML = `
         <div class="flex items-start">
-            <div class="flex-shrink-0">
-                ${type === 'success' ?
-                    '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>' :
-                type === 'error' ?
-                    '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>' :
-                type === 'warning' ?
-                    '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>' :
-                    '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
-                }
-            </div>
-            <div class="ml-4">
-                <p class="text-sm font-semibold">${message}</p>
-            </div>
-            <div class="ml-4 flex-shrink-0 flex">
-                <button id="notification-close" class="inline-flex text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-500 focus:ring-white rounded-full">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    `;
-
-    // Add to document
+            <div>${message}</div>
+            <button id="notification-close" class="ml-4">×</button>
+        </div>`;
     document.body.appendChild(notification);
 
-    // Add close event listener
-    const closeBtn = notification.querySelector('#notification-close');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
-            notification.classList.add('opacity-0', 'translate-x-full');
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 300);
-        });
-    }
-
-    // Remove after 5 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.classList.add('opacity-0', 'translate-x-full');
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    document.body.removeChild(notification);
-                }
-            }, 300);
-        }
-    }, 5000);
+    notification.querySelector('#notification-close').addEventListener('click', () => notification.remove());
+    setTimeout(() => notification.remove(), 5000);
 }
 
-// Format date function
 function formatDate(dateString) {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-// Format number with commas
 function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-// Time ago function
 function timeAgo(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
-
-    let interval = Math.floor(seconds / 31536000);
-    if (interval > 1) {
-        return interval + ' years ago';
+    const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+    const units = [
+        [31536000, "years"], [2592000, "months"], [86400, "days"],
+        [3600, "hours"], [60, "minutes"]
+    ];
+    for (const [sec, name] of units) {
+        const val = Math.floor(seconds / sec);
+        if (val > 1) return val + " " + name + " ago";
     }
-
-    interval = Math.floor(seconds / 2592000);
-    if (interval > 1) {
-        return interval + ' months ago';
-    }
-
-    interval = Math.floor(seconds / 86400);
-    if (interval > 1) {
-        return interval + ' days ago';
-    }
-
-    interval = Math.floor(seconds / 3600);
-    if (interval > 1) {
-        return interval + ' hours ago';
-    }
-
-    interval = Math.floor(seconds / 60);
-    if (interval > 1) {
-        return interval + ' minutes ago';
-    }
-
-    return Math.floor(seconds) + ' seconds ago';
+    return Math.floor(seconds) + " seconds ago";
 }
 
-// Debounce function for search/input optimization
 function debounce(func, wait) {
     let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
+    return (...args) => {
         clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
+        timeout = setTimeout(() => func(...args), wait);
     };
 }
 
-// Export functions for use in other modules
-window.utils = {
-    showNotification,
-    formatDate,
-    formatNumber,
-    timeAgo,
-    debounce
-};
+window.utils = { showNotification, formatDate, formatNumber, timeAgo, debounce };
+// Fix logo path depending on folder depth
+const logoLink = document.getElementById("logoLink");
+const logoImg = document.getElementById("siteLogo");
+
+if (window.location.pathname.includes("/auth/")) {
+    // inside /auth/
+    logoLink.href = "../index.html";
+    logoImg.src = "../logo.png";
+} else {
+    // root pages
+    logoLink.href = "./index.html";
+    logoImg.src = "./logo.png";
+}
