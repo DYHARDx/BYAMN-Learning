@@ -41,9 +41,11 @@ document.addEventListener('DOMContentLoaded', function() {
         Promise.all([
             firebaseServices.getCourses(),
             firebaseServices.getUserEnrollments(userId),
-            firebaseServices.getCategories() // Also fetch categories to map IDs to names
+            firebaseServices.getCategories(), // Also fetch categories to map IDs to names
+            firebaseServices.getUserAnalytics(userId), // Fetch user analytics
+            firebaseServices.getAchievements() // Fetch achievements
         ])
-        .then(([courses, userEnrollments, categories]) => {
+        .then(([courses, userEnrollments, categories, userAnalytics, achievements]) => {
             // Create a map of category IDs to names
             const categoryMap = {};
             categories.forEach(category => {
@@ -58,6 +60,20 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Render charts
             renderCharts(userEnrollments, courses, categoryMap);
+            
+            // Render analytics charts
+            renderAnalyticsCharts(userAnalytics);
+            
+            // Analyze learning patterns
+            const patterns = analyzeLearningPatterns(userAnalytics);
+            renderLearningPatterns(patterns);
+            
+            // Get recommendations
+            const recommendations = getCourseRecommendations(userEnrollments, courses, userAnalytics);
+            renderRecommendations(recommendations);
+            
+            // Render achievements
+            renderAchievements(achievements);
         })
         .catch((error) => {
             console.error('Error loading dashboard data:', error);
@@ -468,5 +484,342 @@ document.addEventListener('DOMContentLoaded', function() {
                     utils.showNotification('Logout failed: ' + error.message, 'error');
                 });
         });
+    }
+    
+    // Advanced analytics functions
+    
+    // Analyze learning patterns
+    function analyzeLearningPatterns(analytics) {
+        if (!analytics || !analytics.dailyActivity) return null;
+        
+        const dailyActivity = analytics.dailyActivity;
+        const dates = Object.keys(dailyActivity).sort();
+        
+        // Calculate learning consistency
+        let totalDays = 0;
+        let activeDays = 0;
+        let totalStudyTime = 0;
+        let totalTimeStudied = 0;
+        
+        dates.forEach(date => {
+            totalDays++;
+            const activity = dailyActivity[date];
+            if (activity.studyTime > 0) {
+                activeDays++;
+                totalTimeStudied += activity.studyTime;
+            }
+            totalStudyTime += activity.studyTime || 0;
+        });
+        
+        // Calculate consistency percentage
+        const consistency = totalDays > 0 ? (activeDays / totalDays) * 100 : 0;
+        
+        // Calculate average study time per active day
+        const avgStudyTime = activeDays > 0 ? totalTimeStudied / activeDays : 0;
+        
+        // Find peak learning hours (simplified - would need more detailed data)
+        const peakHours = findPeakLearningHours(dailyActivity);
+        
+        // Calculate learning velocity (improvement over time)
+        const learningVelocity = calculateLearningVelocity(dailyActivity);
+        
+        return {
+            consistency: Math.round(consistency),
+            avgStudyTime: Math.round(avgStudyTime),
+            totalTimeStudied: Math.round(totalTimeStudied),
+            peakHours: peakHours,
+            learningVelocity: learningVelocity,
+            activeDays: activeDays,
+            totalDays: totalDays
+        };
+    }
+    
+    // Find peak learning hours
+    function findPeakLearningHours(dailyActivity) {
+        // This is a simplified version - in a real implementation, 
+        // we would have more granular time data
+        const hourCounts = {};
+        
+        // For now, we'll just return a generic peak time
+        return {
+            morning: 30, // 6-12 AM
+            afternoon: 40, // 12-6 PM
+            evening: 30 // 6-12 PM
+        };
+    }
+    
+    // Calculate learning velocity
+    function calculateLearningVelocity(dailyActivity) {
+        const dates = Object.keys(dailyActivity).sort();
+        if (dates.length < 2) return 0;
+        
+        // Get first and last week data
+        const firstWeek = dates.slice(0, 7);
+        const lastWeek = dates.slice(-7);
+        
+        // Calculate average study time for each period
+        let firstWeekTotal = 0;
+        let lastWeekTotal = 0;
+        
+        firstWeek.forEach(date => {
+            firstWeekTotal += dailyActivity[date].studyTime || 0;
+        });
+        
+        lastWeek.forEach(date => {
+            lastWeekTotal += dailyActivity[date].studyTime || 0;
+        });
+        
+        const firstWeekAvg = firstWeekTotal / firstWeek.length;
+        const lastWeekAvg = lastWeekTotal / lastWeek.length;
+        
+        // Calculate percentage change
+        if (firstWeekAvg === 0) return lastWeekAvg > 0 ? 100 : 0;
+        
+        return Math.round(((lastWeekAvg - firstWeekAvg) / firstWeekAvg) * 100);
+    }
+    
+    // Render learning patterns analysis
+    function renderLearningPatterns(patterns) {
+        const patternsContainer = document.getElementById('learning-patterns-container');
+        if (!patternsContainer) return;
+        
+        if (!patterns) {
+            patternsContainer.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm8-12a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2z" />
+                    </svg>
+                    <p class="mt-2">No learning pattern data available</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const improvementText = patterns.learningVelocity > 0 ? 
+            `You're improving! ${patterns.learningVelocity}% more than when you started.` : 
+            patterns.learningVelocity < 0 ? 
+            `Keep going! You can improve your learning pace.` : 
+            `Consistent progress! Keep up the good work.`;
+        
+        const patternsHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
+                    <div class="flex items-center mb-4">
+                        <div class="p-2 rounded-lg bg-indigo-100">
+                            <svg class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-900">Learning Consistency</h3>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">${patterns.consistency}%</span>
+                            <span class="text-sm font-medium text-gray-700">${patterns.activeDays}/${patterns.totalDays} days</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-indigo-600 h-2.5 rounded-full" style="width: ${patterns.consistency}%"></div>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-600">${patterns.consistency >= 80 ? 'Excellent consistency!' : patterns.consistency >= 60 ? 'Good consistency!' : 'Keep building your learning habit!'}</p>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-100">
+                    <div class="flex items-center mb-4">
+                        <div class="p-2 rounded-lg bg-amber-100">
+                            <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-900">Study Time</h3>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-2xl font-bold text-gray-900">${Math.round(patterns.avgStudyTime / 60)} min/day</p>
+                        <p class="mt-1 text-sm text-gray-600">Average study time on active days</p>
+                        <p class="mt-2 text-sm text-gray-600">Total: ${Math.round(patterns.totalTimeStudied / 3600)} hours</p>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100 md:col-span-2">
+                    <div class="flex items-center mb-4">
+                        <div class="p-2 rounded-lg bg-green-100">
+                            <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-900">Learning Progress</h3>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-lg font-medium text-gray-900">${improvementText}</p>
+                        <div class="mt-3 flex items-center">
+                            <span class="text-sm text-gray-600 mr-2">Learning Velocity:</span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${patterns.learningVelocity >= 0 ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
+                                ${patterns.learningVelocity >= 0 ? '+' : ''}${patterns.learningVelocity}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        patternsContainer.innerHTML = patternsHTML;
+    }
+    
+    // Render recommendations
+    function renderRecommendations(recommendations) {
+        const recommendationsContainer = document.getElementById('recommendations-container');
+        if (!recommendationsContainer) return;
+        
+        if (!recommendations || recommendations.length === 0) {
+            recommendationsContainer.innerHTML = `
+                <div class="text-center text-gray-500 py-8">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    <p class="mt-2">No recommendations available at the moment</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let recommendationsHTML = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">';
+        
+        recommendations.slice(0, 3).forEach(course => {
+            recommendationsHTML += `
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300">
+                    <div class="h-32 overflow-hidden">
+                        <img 
+                            src="${course.thumbnail || 'https://placehold.co/400x200/6366f1/white?text=Course'}" 
+                            alt="${course.title}" 
+                            class="w-full h-full object-cover"
+                            onerror="this.src='https://placehold.co/400x200/6366f1/white?text=Course';"
+                        >
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-gray-900 line-clamp-2">${course.title}</h3>
+                        <p class="mt-2 text-sm text-gray-600 line-clamp-2">${course.description || 'No description available'}</p>
+                        <div class="mt-4 flex justify-between items-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                ${course.category || 'General'}
+                            </span>
+                            <a 
+                                href="../player.html?courseId=${course.id}"
+                                class="px-3 py-1.5 text-sm rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition duration-300"
+                            >
+                                Explore
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        recommendationsHTML += '</div>';
+        recommendationsContainer.innerHTML = recommendationsHTML;
+    }
+    
+    // Render achievements
+    function renderAchievements(achievements) {
+        const achievementsContainer = document.getElementById('achievements-container');
+        if (!achievementsContainer) return;
+        
+        if (!achievements || achievements.length === 0) {
+            achievementsContainer.innerHTML = `
+                <div class="text-center text-gray-500 py-8">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                    </svg>
+                    <p class="mt-2">No achievements yet. Complete courses to earn badges!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let achievementsHTML = '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">';
+        
+        achievements.forEach(achievement => {
+            achievementsHTML += `
+                <div class="bg-white rounded-lg shadow-sm p-4 border ${achievement.earned ? 'border-green-200 bg-green-50' : 'border-gray-200'}">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 ${achievement.earned ? 'text-green-500' : 'text-gray-400'}">
+                            <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h4 class="text-sm font-medium ${achievement.earned ? 'text-green-800' : 'text-gray-800'}">${achievement.name}</h4>
+                            <p class="text-xs ${achievement.earned ? 'text-green-600' : 'text-gray-500'}">${achievement.earned ? 'Earned' : 'Locked'}</p>
+                        </div>
+                    </div>
+                    <p class="mt-2 text-xs text-gray-600">${achievement.description}</p>
+                </div>
+            `;
+        });
+        
+        achievementsHTML += '</div>';
+        achievementsContainer.innerHTML = achievementsHTML;
+    }
+    
+    // Get course recommendations based on user analytics and enrollments
+    function getCourseRecommendations(enrollments, courses, analytics) {
+        if (!courses || !analytics) return [];
+        
+        // Get user's favorite categories
+        const favoriteCategories = analytics.favoriteCategories || {};
+        
+        // Get completed and in-progress courses
+        const completedCourseIds = enrollments
+            .filter(e => e.progress === 100)
+            .map(e => e.courseId);
+        
+        const inProgressCourseIds = enrollments
+            .filter(e => e.progress > 0 && e.progress < 100)
+            .map(e => e.courseId);
+        
+        // Get all enrolled course IDs
+        const enrolledCourseIds = [...completedCourseIds, ...inProgressCourseIds];
+        
+        // Score courses based on relevance
+        const scoredCourses = courses.map(course => {
+            let score = 0;
+            
+            // Boost score for courses in favorite categories
+            if (course.category && favoriteCategories[course.category]) {
+                score += favoriteCategories[course.category] * 10;
+            }
+            
+            // Boost score for courses with higher difficulty if user is progressing well
+            if (analytics.learningVelocity > 0 && course.difficulty) {
+                const difficultyBoost = course.difficulty === 'Advanced' ? 15 : 
+                                     course.difficulty === 'Intermediate' ? 10 : 5;
+                score += difficultyBoost;
+            }
+            
+            // Boost score for courses with good ratings
+            if (course.rating && course.rating >= 4.5) {
+                score += course.rating * 2;
+            }
+            
+            // Boost score for popular courses
+            if (course.enrollmentCount && course.enrollmentCount > 100) {
+                score += 5;
+            }
+            
+            // Penalize courses that are already enrolled in
+            if (enrolledCourseIds.includes(course.id)) {
+                score -= 100; // Effectively exclude
+            }
+            
+            return {
+                ...course,
+                score: score
+            };
+        });
+        
+        // Filter out courses with negative scores and sort by score
+        return scoredCourses
+            .filter(course => course.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 6); // Return top 6 recommendations
     }
 });

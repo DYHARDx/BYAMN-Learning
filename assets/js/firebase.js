@@ -338,5 +338,118 @@ window.firebaseServices = {
             console.error('Error deleting enrollment:', error);
             throw error;
         }
+    },
+    
+    // Function to get user achievements
+    getAchievements: async () => {
+        try {
+            // Define default achievements
+            const defaultAchievements = [
+                {
+                    id: 'first_course',
+                    name: 'First Steps',
+                    description: 'Complete your first course',
+                    icon: 'beginner',
+                    criteria: { coursesCompleted: 1 }
+                },
+                {
+                    id: 'five_courses',
+                    name: 'Learning Enthusiast',
+                    description: 'Complete 5 courses',
+                    icon: 'enthusiast',
+                    criteria: { coursesCompleted: 5 }
+                },
+                {
+                    id: 'ten_courses',
+                    name: 'Knowledge Seeker',
+                    description: 'Complete 10 courses',
+                    icon: 'seeker',
+                    criteria: { coursesCompleted: 10 }
+                },
+                {
+                    id: 'streak_7',
+                    name: 'Week Warrior',
+                    description: 'Maintain a 7-day learning streak',
+                    icon: 'warrior',
+                    criteria: { learningStreak: 7 }
+                },
+                {
+                    id: 'streak_30',
+                    name: 'Month Master',
+                    description: 'Maintain a 30-day learning streak',
+                    icon: 'master',
+                    criteria: { learningStreak: 30 }
+                },
+                {
+                    id: 'study_10_hours',
+                    name: 'Dedicated Learner',
+                    description: 'Study for 10 hours total',
+                    icon: 'dedicated',
+                    criteria: { totalStudyTime: 36000 } // 10 hours in seconds
+                }
+            ];
+            
+            return defaultAchievements;
+        } catch (error) {
+            console.error('Error fetching achievements:', error);
+            throw error;
+        }
+    },
+    
+    // Function to check if user has earned an achievement
+    checkAchievementEarned: async (userId, achievement) => {
+        try {
+            const { ref, get } = await import("firebase/database");
+            
+            // Get user analytics
+            const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
+            const snapshot = await get(analyticsRef);
+            
+            if (!snapshot.exists()) {
+                return false;
+            }
+            
+            const analytics = snapshot.val();
+            
+            // Check achievement criteria
+            if (achievement.criteria.coursesCompleted) {
+                return (analytics.coursesCompleted || 0) >= achievement.criteria.coursesCompleted;
+            }
+            
+            if (achievement.criteria.learningStreak) {
+                return (analytics.learningStreak || 0) >= achievement.criteria.learningStreak;
+            }
+            
+            if (achievement.criteria.totalStudyTime) {
+                return (analytics.totalStudyTime || 0) >= achievement.criteria.totalStudyTime;
+            }
+            
+            return false;
+        } catch (error) {
+            console.error('Error checking achievement:', error);
+            return false;
+        }
+    },
+    
+    // Function to get all earned achievements for a user
+    getUserAchievements: async (userId) => {
+        try {
+            const achievements = await firebaseServices.getAchievements();
+            const earnedAchievements = [];
+            
+            // Check which achievements have been earned
+            for (const achievement of achievements) {
+                const earned = await firebaseServices.checkAchievementEarned(userId, achievement);
+                earnedAchievements.push({
+                    ...achievement,
+                    earned: earned
+                });
+            }
+            
+            return earnedAchievements;
+        } catch (error) {
+            console.error('Error fetching user achievements:', error);
+            throw error;
+        }
     }
 };
