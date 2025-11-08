@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const completionDateDisplay = document.getElementById('completion-date-display');
     const certificateUid = document.getElementById('certificate-uid');
     const issuedDate = document.getElementById('issued-date');
+    const issuedDateValue = document.getElementById('issued-date-value');
     const instructorName = document.getElementById('instructor-name');
     
     // Custom certificate name modal elements
@@ -103,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (instructorName) instructorName.textContent = course.instructor || 'Rajesh Kumar';
                     
                     // Update issued date
-                    if (issuedDate) issuedDate.innerHTML = 'Issued On: ' + utils.formatDate(enrollment.completedAt || new Date());
+                    if (issuedDateValue) issuedDateValue.textContent = utils.formatDate(enrollment.completedAt || new Date());
                     
                     // Update certificate UID
                     if (certificateUid) certificateUid.textContent = 'UID: ' + certId;
@@ -112,6 +113,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (verifyLink) {
                         verifyLink.href = `verification.html?certId=${certId}`;
                     }
+                    
+                    // Generate QR code
+                    generateQRCode(certId);
                 }
             } else {
                 // Show error if course not found or not completed
@@ -277,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (instructorName) instructorName.textContent = course.instructor || 'Rajesh Kumar';
                     
                     // Update issued date
-                    if (issuedDate) issuedDate.innerHTML = 'Issued On: ' + utils.formatDate(enrollment.completedAt || new Date());
+                    if (issuedDateValue) issuedDateValue.textContent = utils.formatDate(enrollment.completedAt || new Date());
                     
                     // Update certificate UID
                     const certId = enrollment.certificateId || 'CERT-BYAMN-' + Date.now().toString().substr(-5) + Math.floor(1000 + Math.random() * 9000);
@@ -287,6 +291,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (verifyLink) {
                         verifyLink.href = `verification.html?certId=${certId}`;
                     }
+                    
+                    // Generate QR code
+                    generateQRCode(certId);
                 }
             })
             .catch((error) => {
@@ -478,6 +485,35 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Generate QR Code for certificate verification
+    function generateQRCode(certificateId) {
+        const qrCanvas = document.getElementById('qr-code');
+        if (!qrCanvas || !certificateId) {
+            return;
+        }
+
+        // Generate verification URL
+        const verificationUrl = `${window.location.origin}${window.location.pathname.replace('certificate.html', '')}verification.html?certId=${certificateId}`;
+        
+        // Check if QRCode library is available
+        if (typeof QRCode !== 'undefined') {
+            QRCode.toCanvas(qrCanvas, verificationUrl, {
+                width: 80,
+                margin: 1,
+                color: {
+                    dark: '#1e3a8a', // BYAMN dark blue
+                    light: '#ffffff'
+                }
+            }, function (error) {
+                if (error) {
+                    console.error('Error generating QR code:', error);
+                }
+            });
+        } else {
+            console.warn('QRCode library not loaded');
+        }
+    }
+
     // Handle logout
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function() {
