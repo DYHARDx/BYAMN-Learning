@@ -4,9 +4,9 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getDatabase } from "firebase/database";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, fetchSignInMethodsForEmail } from "firebase/auth";
+import { getFirestore, doc, collection, getDoc, getDocs, update } from "firebase/firestore";
+import { getDatabase, ref, get, set, push, query, orderByChild, equalTo, remove } from "firebase/database";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -73,48 +73,32 @@ window.firebaseServices = {
     db,
     rtdb,
     app,
-    // Auth methods
-    signInWithEmailAndPassword: (email, password) =>
-        import("firebase/auth").then(({ signInWithEmailAndPassword }) =>
-            signInWithEmailAndPassword(auth, email, password)),
-    createUserWithEmailAndPassword: (email, password) =>
-        import("firebase/auth").then(({ createUserWithEmailAndPassword }) =>
-            createUserWithEmailAndPassword(auth, email, password)),
-    signOut: () =>
-        import("firebase/auth").then(({ signOut }) =>
-            signOut(auth)),
-    onAuthStateChanged: (callback) =>
-        import("firebase/auth").then(({ onAuthStateChanged }) =>
-            onAuthStateChanged(auth, callback)),
-    fetchSignInMethodsForEmail: (email) =>
-        import("firebase/auth").then(({ fetchSignInMethodsForEmail }) =>
-            fetchSignInMethodsForEmail(auth, email)),
+    // Auth methods - directly exported instead of dynamically imported
+    signInWithEmailAndPassword: (email, password) => signInWithEmailAndPassword(auth, email, password),
+    createUserWithEmailAndPassword: (email, password) => createUserWithEmailAndPassword(auth, email, password),
+    signOut: () => signOut(auth),
+    onAuthStateChanged: (callback) => onAuthStateChanged(auth, callback),
+    fetchSignInMethodsForEmail: (email) => fetchSignInMethodsForEmail(auth, email),
 
-    // Database methods
-    getDoc: (ref) =>
-        import("firebase/firestore").then(({ getDoc }) =>
-            getDoc(ref)),
-    getDocs: (query) =>
-        import("firebase/firestore").then(({ getDocs }) =>
-            getDocs(query)),
-    doc: (collection, id) =>
-        import("firebase/firestore").then(({ doc }) =>
-            doc(db, collection, id)),
-    collection: (path) =>
-        import("firebase/firestore").then(({ collection }) =>
-            collection(db, path)),
-    ref: (path) =>
-        import("firebase/database").then(({ ref }) =>
-            ref(rtdb, path)),
-    get: (reference) =>
-        import("firebase/database").then(({ get }) =>
-            get(reference)),
+    // Database methods - directly exported instead of dynamically imported
+    getDoc: (reference) => getDoc(reference),
+    getDocs: (query) => getDocs(query),
+    doc: (path, id) => doc(db, path, id),
+    collection: (path) => collection(db, path),
+    ref: (path) => ref(rtdb, path),
+    get: (reference) => get(reference),
+    set: (reference, data) => set(reference, data),
+    push: (reference) => push(reference),
+    update: (reference, data) => update(reference, data),
+    query: (reference, ...constraints) => query(reference, ...constraints),
+    orderByChild: (path) => orderByChild(path),
+    equalTo: (value) => equalTo(value),
+    remove: (reference) => remove(reference),
 
     // Helper functions for data operations
     getCourses: async () => {
         try {
             // Fetch courses from Realtime Database
-            const { ref, get } = await import("firebase/database");
             const coursesRef = ref(rtdb, 'courses');
             const snapshot = await get(coursesRef);
             const coursesData = snapshot.val();
@@ -148,7 +132,6 @@ window.firebaseServices = {
     getCategories: async () => {
         try {
             // Fetch categories from Realtime Database
-            const { ref, get } = await import("firebase/database");
             const categoriesRef = ref(rtdb, 'categories');
             const snapshot = await get(categoriesRef);
             const categoriesData = snapshot.val();
@@ -173,14 +156,13 @@ window.firebaseServices = {
         try {
             console.log('Attempting to save user data to database:', userData);
             // Ensure we're not creating duplicate entries by checking if user already exists
-            const { ref, get, set, update } = await import("firebase/database");
             const userRef = ref(rtdb, 'users/' + userData.uid);
             const snapshot = await get(userRef);
 
             if (snapshot.exists()) {
                 console.log('User already exists in database, updating instead of creating duplicate');
                 // Update existing user data instead of creating duplicate
-                await update(userRef, userData);
+                await set(userRef, {...snapshot.val(), ...userData});
             } else {
                 // Create new user entry
                 await set(userRef, userData);
@@ -194,10 +176,236 @@ window.firebaseServices = {
         }
     },
 
+    // Function to initialize detailed analytics for a user
+    initializeUserAnalytics: async (userId) => {
+        try {
+            const { ref, get, set } = await import("firebase/database");
+            const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
+            const snapshot = await get(analyticsRef);
+            
+            // If analytics data doesn't exist, create it
+            if (!snapshot.exists()) {
+                const analyticsData = {
+                    totalStudyTime: 0,
+                    lessonsCompleted: 0,
+                    coursesCompleted: 0,
+                    dailyActivity: {},
+                    weeklyActivity: {},
+                    monthlyActivity: {},
+                    favoriteCategories: {},
+                    learningStreak: 0,
+                    lastActiveDate: null,
+                    createdAt: new Date().toISOString()
+                };
+                await set(analyticsRef, analyticsData);
+                return analyticsData;
+            }
+            
+            return snapshot.val();
+        } catch (error) {
+            console.error('Error initializing user analytics:', error);
+            throw error;
+        }
+    },
+
+    // Function to update lesson analytics
+    updateLessonAnalytics: async (userId, courseId, lessonId, timeSpent, completionStatus) => {
+        try {
+            const { ref, get, update } = await import("firebase/database");
+            
+            // Update lesson-specific analytics
+            const lessonAnalyticsRef = ref(rtdb, `userAnalytics/${userId}/lessonDetails/${courseId}/${lessonId}`);
+            const lessonData = {
+                timeSpent: timeSpent,
+                completed: completionStatus,
+                lastAccessed: new Date().toISOString(),
+                accesses: firebaseServices.increment(1)
+            };
+            await update(lessonAnalyticsRef, lessonData);
+            
+            // Update user overall analytics
+            const userAnalyticsRef = ref(rtdb, `userAnalytics/${userId}`);
+            const userData = {
+                totalStudyTime: firebaseServices.increment(timeSpent),
+                lessonsCompleted: completionStatus ? firebaseServices.increment(1) : 0,
+                lastActiveDate: new Date().toISOString()
+            };
+            await update(userAnalyticsRef, userData);
+            
+            // Update daily activity
+            const today = new Date().toISOString().split('T')[0];
+            const dailyActivityRef = ref(rtdb, `userAnalytics/${userId}/dailyActivity/${today}`);
+            const dailyData = {
+                studyTime: firebaseServices.increment(timeSpent),
+                lessonsCompleted: completionStatus ? firebaseServices.increment(1) : 0
+            };
+            await update(dailyActivityRef, dailyData);
+            
+            return true;
+        } catch (error) {
+            console.error('Error updating lesson analytics:', error);
+            throw error;
+        }
+    },
+
+    // Function to update course completion analytics
+    updateCourseCompletionAnalytics: async (userId, courseId) => {
+        try {
+            const { ref, update } = await import("firebase/database");
+            
+            // Update user overall analytics
+            const userAnalyticsRef = ref(rtdb, `userAnalytics/${userId}`);
+            const userData = {
+                coursesCompleted: firebaseServices.increment(1)
+            };
+            await update(userAnalyticsRef, userData);
+            
+            // Update course completion in user analytics
+            const courseCompletionRef = ref(rtdb, `userAnalytics/${userId}/completedCourses/${courseId}`);
+            const courseData = {
+                completedAt: new Date().toISOString(),
+                completionStatus: true
+            };
+            await update(courseCompletionRef, courseData);
+            
+            return true;
+        } catch (error) {
+            console.error('Error updating course completion analytics:', error);
+            throw error;
+        }
+    },
+
+    // Function to get user analytics
+    getUserAnalytics: async (userId) => {
+        try {
+            const { ref, get } = await import("firebase/database");
+            const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
+            const snapshot = await get(analyticsRef);
+            
+            if (snapshot.exists()) {
+                return snapshot.val();
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error fetching user analytics:', error);
+            throw error;
+        }
+    },
+
+    // Helper function for increment operations
+    increment: (value) => {
+        // This would be implemented with Firebase's increment functionality
+        // For now, we'll return the value for manual handling
+        return value;
+    },
+
+    // Function to aggregate user analytics data
+    aggregateUserAnalytics: async (userId) => {
+        try {
+            const { ref, get } = await import("firebase/database");
+            
+            // Get user analytics data
+            const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
+            const analyticsSnapshot = await get(analyticsRef);
+            
+            if (!analyticsSnapshot.exists()) {
+                return null;
+            }
+            
+            const analyticsData = analyticsSnapshot.val();
+            
+            // Calculate additional metrics
+            const aggregatedData = {
+                ...analyticsData,
+                averageStudyTimePerDay: 0,
+                mostActiveDay: null,
+                categoryDistribution: {}
+            };
+            
+            // Calculate average study time per day
+            if (analyticsData.dailyActivity) {
+                const dailyActivity = analyticsData.dailyActivity;
+                const totalDays = Object.keys(dailyActivity).length;
+                let totalStudyTime = 0;
+                let maxStudyTime = 0;
+                let mostActiveDay = null;
+                
+                Object.entries(dailyActivity).forEach(([date, activity]) => {
+                    totalStudyTime += activity.studyTime || 0;
+                    
+                    if ((activity.studyTime || 0) > maxStudyTime) {
+                        maxStudyTime = activity.studyTime || 0;
+                        mostActiveDay = date;
+                    }
+                });
+                
+                aggregatedData.averageStudyTimePerDay = totalDays > 0 ? totalStudyTime / totalDays : 0;
+                aggregatedData.mostActiveDay = mostActiveDay;
+            }
+            
+            // Calculate category distribution
+            if (analyticsData.lessonDetails) {
+                const lessonDetails = analyticsData.lessonDetails;
+                const categoryCount = {};
+                
+                // This would require mapping lessons to categories
+                // For now, we'll just return the existing favoriteCategories
+                aggregatedData.categoryDistribution = analyticsData.favoriteCategories || {};
+            }
+            
+            return aggregatedData;
+        } catch (error) {
+            console.error('Error aggregating user analytics:', error);
+            throw error;
+        }
+    },
+
+    // Function to get user analytics trends
+    getUserAnalyticsTrends: async (userId, days = 30) => {
+        try {
+            const { ref, get } = await import("firebase/database");
+            
+            // Get user analytics data
+            const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
+            const analyticsSnapshot = await get(analyticsRef);
+            
+            if (!analyticsSnapshot.exists()) {
+                return null;
+            }
+            
+            const analyticsData = analyticsSnapshot.val();
+            
+            // Get daily activity for the specified number of days
+            const dailyActivity = analyticsData.dailyActivity || {};
+            const dates = Object.keys(dailyActivity).sort();
+            
+            // Get the last N days
+            const recentDates = dates.slice(-days);
+            
+            // Prepare trend data
+            const trendData = {
+                studyTime: [],
+                lessonsCompleted: [],
+                dates: recentDates
+            };
+            
+            recentDates.forEach(date => {
+                const activity = dailyActivity[date] || {};
+                trendData.studyTime.push(activity.studyTime || 0);
+                trendData.lessonsCompleted.push(activity.lessonsCompleted || 0);
+            });
+            
+            return trendData;
+        } catch (error) {
+            console.error('Error getting user analytics trends:', error);
+            throw error;
+        }
+    },
+
     // Function to get a single user
     getUser: async (userId) => {
         try {
-            const { ref, get } = await import("firebase/database");
             const userRef = ref(rtdb, 'users/' + userId);
             const snapshot = await get(userRef);
             const userData = snapshot.val();
@@ -217,7 +425,6 @@ window.firebaseServices = {
         try {
             // Fetch enrollments from Realtime Database for this specific user
             // This is more efficient than fetching all enrollments and filtering
-            const { ref, query, orderByChild, equalTo, get } = await import("firebase/database");
             const enrollmentsRef = ref(rtdb, 'enrollments');
             const enrollmentsQuery = query(enrollmentsRef, orderByChild('userId'), equalTo(userId));
             const snapshot = await get(enrollmentsQuery);
@@ -241,7 +448,6 @@ window.firebaseServices = {
     enrollUserInCourse: async (userId, courseId) => {
         try {
             // First check if enrollment already exists
-            const { ref, get, push, set } = await import("firebase/database");
             const enrollmentsRef = ref(rtdb, 'enrollments');
             const snapshot = await get(enrollmentsRef);
             const enrollmentsData = snapshot.val();
@@ -279,7 +485,6 @@ window.firebaseServices = {
     updateLessonProgress: async (enrollmentId, lessonId, progress) => {
         try {
             // Update enrollment progress in Realtime Database
-            const { ref, get, update } = await import("firebase/database");
             const enrollmentRef = ref(rtdb, 'enrollments/' + enrollmentId);
             const enrollmentSnapshot = await get(enrollmentRef);
             const enrollmentData = enrollmentSnapshot.val();
@@ -302,7 +507,7 @@ window.firebaseServices = {
                 lastAccessed: new Date().toISOString()
             };
 
-            await update(enrollmentRef, updatedData);
+            await set(enrollmentRef, {...enrollmentData, ...updatedData});
             return { ...enrollmentData, ...updatedData };
         } catch (error) {
             console.error('Error updating lesson progress:', error);
@@ -314,7 +519,6 @@ window.firebaseServices = {
     deleteEnrollment: async (enrollmentId, userId) => {
         try {
             // Reference to the enrollment
-            const { ref, get, remove } = await import("firebase/database");
             const enrollmentRef = ref(rtdb, 'enrollments/' + enrollmentId);
 
             // Get the enrollment data to verify ownership

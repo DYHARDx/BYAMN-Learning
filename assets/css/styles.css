@@ -169,6 +169,25 @@ body.theme-transition * {
   font-size: 1.5rem;
 }
 
+/* Review System Styles */
+.review-card {
+  transition: all 0.3s ease;
+}
+
+.review-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.review-rating-stars {
+  color: #fbbf24; /* amber-400 */
+}
+
+.review-user-avatar {
+  background-color: #e0f2fe; /* primary-100 */
+  color: #0284c7; /* primary-700 */
+}
+
 /* Text visibility utilities */
 .text-visible {
   color: var(--text-secondary);
@@ -207,6 +226,9 @@ body.theme-transition * {
   border: none;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
+}
+
+.btn-link {
   line-height: 1.25rem;
   text-decoration: none;
   box-shadow: var(--shadow-sm);
@@ -307,6 +329,25 @@ body.theme-transition * {
 .btn-icon-lg {
   padding: 0.75rem;
   border-radius: 0.75rem;
+}
+
+/* Review System Styles */
+.review-card {
+  transition: all 0.3s ease;
+}
+
+.review-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.review-rating-stars {
+  color: #fbbf24; /* amber-400 */
+}
+
+.review-user-avatar {
+  background-color: #e0f2fe; /* primary-100 */
+  color: #0284c7; /* primary-700 */
 }
 
 /* Modern Form Elements */
@@ -1774,13 +1815,16 @@ body.theme-transition * {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   font-weight: 600;
   transition: all var(--transition-fast) ease;
   cursor: pointer;
   border: none;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
+}
+
+.btn-link {
   line-height: 1.25rem;
   text-decoration: none;
   box-shadow: var(--shadow-sm);
@@ -1831,15 +1875,11 @@ body.theme-transition * {
   color: var(--text-primary);
 }
 
-/* Dark mode override removed */
-
 .btn-secondary:hover:not(:disabled) {
   background-color: var(--neutral-300);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
-
-/* Dark mode override removed */
 
 .btn-secondary:active:not(:disabled) {
   transform: translateY(0);
@@ -1851,15 +1891,11 @@ body.theme-transition * {
   border: 2px solid var(--primary-600);
 }
 
-/* Dark mode override removed */
-
 .btn-outline:hover:not(:disabled) {
   background-color: var(--primary-50);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
-
-/* Dark mode override removed */
 
 .btn-outline:active:not(:disabled) {
   transform: translateY(0);
@@ -1875,8 +1911,6 @@ body.theme-transition * {
   background-color: var(--neutral-100);
 }
 
-/* Dark mode override removed */
-
 /* Icon Buttons */
 .btn-icon {
   padding: 0.5rem;
@@ -1891,6 +1925,25 @@ body.theme-transition * {
 .btn-icon-lg {
   padding: 0.75rem;
   border-radius: 0.75rem;
+}
+
+/* Review System Styles */
+.review-card {
+  transition: all 0.3s ease;
+}
+
+.review-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.review-rating-stars {
+  color: #fbbf24; /* amber-400 */
+}
+
+.review-user-avatar {
+  background-color: #e0f2fe; /* primary-100 */
+  color: #0284c7; /* primary-700 */
 }
 
 /* Modern Form Elements */

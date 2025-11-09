@@ -37,10 +37,20 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Signing in...';
             submitBtn.disabled = true;
 
+            // Add timeout to prevent hanging
+            const loginTimeout = setTimeout(() => {
+                utils.showNotification('Login is taking longer than expected. Please try again.', 'warning');
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }, 10000); // 10 second timeout
+
             // Directly attempt to sign in with email and password
             // This approach is more reliable than checking email existence first
             firebaseServices.signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
+                    // Clear timeout since login succeeded
+                    clearTimeout(loginTimeout);
+                    
                     // Signed in
                     const user = userCredential.user;
                     console.log('User signed in:', user);
@@ -58,6 +68,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.href = '../dashboard.html';
                 })
                 .catch((error) => {
+                    // Clear timeout since we got an error
+                    clearTimeout(loginTimeout);
+                    
                     // Handle errors
                     const errorCode = error.code;
                     const errorMessage = error.message;
@@ -208,12 +221,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(() => {
                     // Sign-out successful
                     console.log('User signed out');
+                    // Force a full page reload to ensure clean state
                     window.location.href = '../index.html';
                 })
                 .catch((error) => {
                     // Handle errors
                     console.error('Logout error:', error);
                     utils.showNotification('Logout failed: ' + error.message, 'error');
+                    // Even if logout fails, redirect to homepage
+                    window.location.href = '../index.html';
                 });
         });
     }
@@ -246,11 +262,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('logout-btn').addEventListener('click', function() {
                     firebaseServices.signOut()
                         .then(() => {
+                            // Force a full page reload to ensure clean state
                             window.location.href = '../index.html';
                         })
                         .catch((error) => {
                             console.error('Logout error:', error);
                             utils.showNotification('Logout failed: ' + error.message, 'error');
+                            // Even if logout fails, redirect to homepage
+                            window.location.href = '../index.html';
                         });
                 });
             }
@@ -269,11 +288,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('mobile-logout-btn').addEventListener('click', function() {
                     firebaseServices.signOut()
                         .then(() => {
+                            // Force a full page reload to ensure clean state
                             window.location.href = '../index.html';
                         })
                         .catch((error) => {
                             console.error('Logout error:', error);
                             utils.showNotification('Logout failed: ' + error.message, 'error');
+                            // Even if logout fails, redirect to homepage
+                            window.location.href = '../index.html';
                         });
                 });
             }

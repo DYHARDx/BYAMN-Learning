@@ -12,6 +12,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressChartContainer = document.getElementById('progress-chart-container');
     const categoryChartContainer = document.getElementById('category-chart-container');
     
+    // New analytics elements
+    const studyTimeElement = document.getElementById('study-time');
+    const lessonsCompletedElement = document.getElementById('lessons-completed');
+    const learningStreakElement = document.getElementById('learning-streak');
+    const favoriteCategoryElement = document.getElementById('favorite-category');
+    const studyTimeChartContainer = document.getElementById('study-time-chart-container');
+    const activityChartContainer = document.getElementById('activity-chart-container');
+    const streakChartContainer = document.getElementById('streak-chart-container');
+    
     // Check auth state
     firebaseServices.onAuthStateChanged((user) => {
         if (user) {
@@ -42,10 +51,9 @@ document.addEventListener('DOMContentLoaded', function() {
             firebaseServices.getCourses(),
             firebaseServices.getUserEnrollments(userId),
             firebaseServices.getCategories(), // Also fetch categories to map IDs to names
-            firebaseServices.getUserAnalytics(userId), // Fetch user analytics
-            firebaseServices.getAchievements() // Fetch achievements
+            firebaseServices.getUserAnalytics(userId) // Fetch user analytics
         ])
-        .then(([courses, userEnrollments, categories, userAnalytics, achievements]) => {
+        .then(([courses, userEnrollments, categories, userAnalytics]) => {
             // Create a map of category IDs to names
             const categoryMap = {};
             categories.forEach(category => {
@@ -55,6 +63,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update stats
             updateStats(userEnrollments);
             
+            // Update analytics stats
+            updateAnalyticsStats(userAnalytics);
+            
             // Render courses
             renderCourses(userEnrollments, courses, categoryMap);
             
@@ -63,17 +74,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Render analytics charts
             renderAnalyticsCharts(userAnalytics);
-            
-            // Analyze learning patterns
-            const patterns = analyzeLearningPatterns(userAnalytics);
-            renderLearningPatterns(patterns);
-            
-            // Get recommendations
-            const recommendations = getCourseRecommendations(userEnrollments, courses, userAnalytics);
-            renderRecommendations(recommendations);
-            
-            // Render achievements
-            renderAchievements(achievements);
         })
         .catch((error) => {
             console.error('Error loading dashboard data:', error);
@@ -116,6 +116,54 @@ document.addEventListener('DOMContentLoaded', function() {
         certificatesCountElement.textContent = certificates;
     }
     
+    // Update analytics stats
+    function updateAnalyticsStats(analytics) {
+        if (!analytics) {
+            // Set default values if no analytics data
+            if (studyTimeElement) studyTimeElement.textContent = '0h 0m';
+            if (lessonsCompletedElement) lessonsCompletedElement.textContent = '0';
+            if (learningStreakElement) learningStreakElement.textContent = '0';
+            if (favoriteCategoryElement) favoriteCategoryElement.textContent = 'None';
+            return;
+        }
+        
+        // Format study time (convert seconds to hours and minutes)
+        if (studyTimeElement) {
+            const totalSeconds = analytics.totalStudyTime || 0;
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            studyTimeElement.textContent = `${hours}h ${minutes}m`;
+        }
+        
+        // Lessons completed
+        if (lessonsCompletedElement) {
+            lessonsCompletedElement.textContent = analytics.lessonsCompleted || 0;
+        }
+        
+        // Learning streak
+        if (learningStreakElement) {
+            learningStreakElement.textContent = analytics.learningStreak || 0;
+        }
+        
+        // Favorite category
+        if (favoriteCategoryElement && analytics.favoriteCategories) {
+            // Find the category with the highest count
+            let favoriteCategory = 'None';
+            let maxCount = 0;
+            
+            Object.entries(analytics.favoriteCategories).forEach(([category, count]) => {
+                if (count > maxCount) {
+                    maxCount = count;
+                    favoriteCategory = category;
+                }
+            });
+            
+            favoriteCategoryElement.textContent = favoriteCategory;
+        } else if (favoriteCategoryElement) {
+            favoriteCategoryElement.textContent = 'None';
+        }
+    }
+    
     // Render charts
     function renderCharts(enrollments, courses, categoryMap) {
         // Progress distribution chart
@@ -123,6 +171,61 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Category distribution chart
         renderCategoryChart(enrollments, courses, categoryMap);
+    }
+    
+    // Render analytics charts
+    function renderAnalyticsCharts(analytics) {
+        if (!analytics) {
+            // Show empty state for analytics charts
+            if (studyTimeChartContainer) {
+                studyTimeChartContainer.innerHTML = `
+                    <div class="text-center text-gray-500">
+                        <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm8-12a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2z" />
+                        </svg>
+                        <p class="mt-2">No analytics data available</p>
+                    </div>
+                `;
+            }
+            
+            if (activityChartContainer) {
+                activityChartContainer.innerHTML = `
+                    <div class="text-center text-gray-500">
+                        <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p class="mt-2">No activity data available</p>
+                    </div>
+                `;
+            }
+            
+            if (streakChartContainer) {
+                streakChartContainer.innerHTML = `
+                    <div class="text-center text-gray-500">
+                        <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="mt-2">No streak data available</p>
+                    </div>
+                `;
+            }
+            return;
+        }
+        
+        // Render study time chart
+        if (studyTimeChartContainer) {
+            renderStudyTimeChart(analytics);
+        }
+        
+        // Render activity chart
+        if (activityChartContainer) {
+            renderActivityChart(analytics);
+        }
+        
+        // Render streak chart
+        if (streakChartContainer) {
+            renderStreakChart(analytics);
+        }
     }
     
     // Render progress distribution chart
@@ -223,6 +326,180 @@ document.addEventListener('DOMContentLoaded', function() {
             // Partial circle
             return `path("M ${centerX},${centerY} L ${startX},${startY} A ${radius},${radius} 0 ${largeArcFlag},1 ${endX},${endY} Z")`;
         }
+    }
+    
+    // Render study time chart
+    function renderStudyTimeChart(analytics) {
+        // Get daily activity data for the last 7 days
+        const dailyActivity = analytics.dailyActivity || {};
+        const dates = Object.keys(dailyActivity).sort().slice(-7); // Last 7 days
+        
+        if (dates.length === 0) {
+            studyTimeChartContainer.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="mt-2">No study time data available</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Prepare data for chart
+        const studyTimes = dates.map(date => {
+            const activity = dailyActivity[date] || {};
+            return (activity.studyTime || 0) / 60; // Convert seconds to minutes
+        });
+        
+        const maxTime = Math.max(...studyTimes, 1); // Ensure at least 1 for scaling
+        
+        // Generate chart HTML
+        const chartHTML = `
+            <div class="w-full h-full flex flex-col">
+                <div class="flex items-end flex-1 space-x-2 md:space-x-3 px-2 py-4">
+                    ${dates.map((date, index) => {
+                        const time = studyTimes[index];
+                        const heightPercent = Math.max(10, (time / maxTime) * 100);
+                        const day = new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
+                        
+                        return `
+                            <div class="flex flex-col items-center flex-1 group min-w-[30px]">
+                                <div class="text-xs text-gray-500 mb-1 font-bold">${Math.round(time)}m</div>
+                                <div class="w-3/4 md:w-3/4 bg-gradient-to-t from-indigo-500 to-purple-600 rounded-t-lg transition-all duration-700 ease-out hover:opacity-90 hover:shadow-lg transform hover:-translate-y-1" 
+                                     style="height: ${heightPercent}%">
+                                </div>
+                                <div class="text-xs text-gray-600 mt-2 text-center truncate w-full px-1 font-semibold" 
+                                     style="max-width: 40px;">${day}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                
+                <div class="mt-4 md:mt-6 text-center">
+                    <p class="text-sm text-gray-600 font-medium">Study Time (Last 7 Days)</p>
+                </div>
+            </div>
+        `;
+        
+        studyTimeChartContainer.innerHTML = chartHTML;
+    }
+    
+    // Render activity chart
+    function renderActivityChart(analytics) {
+        // Get daily activity data for the last 14 days
+        const dailyActivity = analytics.dailyActivity || {};
+        const dates = Object.keys(dailyActivity).sort().slice(-14); // Last 14 days
+        
+        if (dates.length === 0) {
+            activityChartContainer.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p class="mt-2">No activity data available</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Prepare data for chart (lessons completed per day)
+        const lessonsCompleted = dates.map(date => {
+            const activity = dailyActivity[date] || {};
+            return activity.lessonsCompleted || 0;
+        });
+        
+        const maxLessons = Math.max(...lessonsCompleted, 1); // Ensure at least 1 for scaling
+        
+        // Generate chart HTML
+        const chartHTML = `
+            <div class="w-full h-full flex flex-col">
+                <div class="flex items-end flex-1 space-x-1 md:space-x-2 px-2 py-4">
+                    ${dates.map((date, index) => {
+                        const lessons = lessonsCompleted[index];
+                        const heightPercent = Math.max(5, (lessons / maxLessons) * 100);
+                        const day = new Date(date).getDate();
+                        
+                        return `
+                            <div class="flex flex-col items-center flex-1 group min-w-[20px]">
+                                <div class="text-xs text-gray-500 mb-1 font-bold">${lessons}</div>
+                                <div class="w-full bg-gradient-to-t from-blue-500 to-cyan-600 rounded-t-lg transition-all duration-700 ease-out hover:opacity-90 hover:shadow-lg transform hover:-translate-y-1" 
+                                     style="height: ${heightPercent}%">
+                                </div>
+                                <div class="text-xs text-gray-600 mt-1 text-center font-semibold">${day}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                
+                <div class="mt-4 md:mt-6 text-center">
+                    <p class="text-sm text-gray-600 font-medium">Lessons Completed (Last 14 Days)</p>
+                </div>
+            </div>
+        `;
+        
+        activityChartContainer.innerHTML = chartHTML;
+    }
+    
+    // Render streak chart
+    function renderStreakChart(analytics) {
+        // Get daily activity data for the last 30 days
+        const dailyActivity = analytics.dailyActivity || {};
+        const dates = Object.keys(dailyActivity).sort().slice(-30); // Last 30 days
+        
+        if (dates.length === 0) {
+            streakChartContainer.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="mt-2">No streak data available</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Prepare data for chart (check if user studied each day)
+        const studyDays = dates.map(date => {
+            const activity = dailyActivity[date] || {};
+            return (activity.studyTime || 0) > 0 ? 1 : 0;
+        });
+        
+        // Generate chart HTML (calendar-like view)
+        const chartHTML = `
+            <div class="w-full h-full flex flex-col">
+                <div class="grid grid-cols-7 gap-1 md:gap-2 px-2 py-4">
+                    ${dates.map((date, index) => {
+                        const studied = studyDays[index];
+                        const day = new Date(date).getDate();
+                        const bgColor = studied ? 'bg-green-500' : 'bg-gray-200';
+                        
+                        return `
+                            <div class="flex items-center justify-center aspect-square ${bgColor} rounded transition-all duration-300 hover:opacity-90 hover:shadow-lg" 
+                                 title="${date}: ${studied ? 'Studied' : 'No activity'}">
+                                <span class="text-xs font-bold text-white">${day}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                
+                <div class="mt-4 md:mt-6 text-center">
+                    <p class="text-sm text-gray-600 font-medium">Study Activity (Last 30 Days)</p>
+                    <div class="flex justify-center mt-2 space-x-4">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-green-500 rounded mr-1"></div>
+                            <span class="text-xs text-gray-600">Studied</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-gray-200 rounded mr-1"></div>
+                            <span class="text-xs text-gray-600">No Activity</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        streakChartContainer.innerHTML = chartHTML;
     }
     
     // Render category distribution chart
