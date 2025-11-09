@@ -38,6 +38,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let watchStartTime = null;
     let watchedTime = 0;
     let minWatchTime = 0; // Minimum time required to watch (in seconds)
+    let lessonStartTime = null; // For detailed analytics
+    let totalLessonTime = 0; // Total time spent on current lesson
+    let pauseStartTime = null; // Track when user paused
+    let totalPauseTime = 0; // Total time paused
     
     // Get course ID from URL parameter
     const urlParams = new URLSearchParams(window.location.search);
@@ -253,11 +257,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Stop any existing watch time tracking
         stopWatchTimeTracking();
         
-        // Save current watched time before loading new lesson
+        // Save current watched time and analytics before loading new lesson
         if (currentCourse && currentCourse.lessons && currentLessonIndex < currentCourse.lessons.length) {
             const currentLesson = currentCourse.lessons[currentLessonIndex];
             if (currentLesson) {
                 saveWatchedTimeToLocalStorage(courseId, currentLesson.id, watchedTime);
+                // Save detailed analytics
+                if (lessonStartTime) {
+                    const currentTime = new Date();
+                    totalLessonTime = (currentTime - lessonStartTime) / 1000; // Convert to seconds
+                    saveLessonAnalytics(courseId, currentLesson.id, totalLessonTime, watchedTime);
+                }
             }
         }
         
@@ -277,6 +287,12 @@ document.addEventListener('DOMContentLoaded', function() {
         watchStartTime = null;
         watchedTime = 0;
         minWatchTime = lesson.minWatchTime || 0; // Get minimum watch time from lesson data
+        
+        // Reset detailed analytics tracking
+        lessonStartTime = new Date(); // Start tracking when lesson loads
+        totalLessonTime = 0;
+        pauseStartTime = null;
+        totalPauseTime = 0;
         
         console.log('Setting minWatchTime from lesson:', lesson.minWatchTime, 'Final minWatchTime:', minWatchTime);
         
@@ -432,12 +448,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (event.data == YT.PlayerState.PLAYING) {
             // Video started playing
             watchStartTime = new Date();
+            
+            // Track when lesson started if not already tracked
+            if (!lessonStartTime) {
+                lessonStartTime = new Date();
+            }
+            
             console.log('Video started playing at:', watchStartTime);
             
             // Start continuous tracking of watched time
             startWatchTimeTracking();
-        } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
-            // Video paused or ended
+        } else if (event.data == YT.PlayerState.PAUSED) {
+            // Video paused
             stopWatchTimeTracking();
             
             if (watchStartTime) {
@@ -445,10 +467,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 const timeDiff = (endTime - watchStartTime) / 1000; // Convert to seconds
                 watchedTime += timeDiff;
                 watchStartTime = null;
-                console.log('Video paused/ended. Watched time so far:', watchedTime, 'seconds');
+                
+                // Track pause time
+                pauseStartTime = new Date();
+                
+                console.log('Video paused. Watched time so far:', watchedTime, 'seconds');
                 
                 // Save watched time to localStorage
                 saveWatchedTimeToLocalStorage(courseId, lesson.id, watchedTime);
+                
+                // Update button visibility based on watched time
+                updateButtonVisibility(lesson);
+            }
+        } else if (event.data == YT.PlayerState.ENDED) {
+            // Video ended
+            stopWatchTimeTracking();
+            
+            if (watchStartTime) {
+                const endTime = new Date();
+                const timeDiff = (endTime - watchStartTime) / 1000; // Convert to seconds
+                watchedTime += timeDiff;
+                watchStartTime = null;
+                
+                // Calculate total lesson time
+                if (lessonStartTime) {
+                    totalLessonTime = (endTime - lessonStartTime) / 1000; // Convert to seconds
+                }
+                
+                console.log('Video ended. Total lesson time:', totalLessonTime, 'seconds. Watched time:', watchedTime, 'seconds');
+                
+                // Save watched time to localStorage
+                saveWatchedTimeToLocalStorage(courseId, lesson.id, watchedTime);
+                
+                // Save detailed analytics
+                saveLessonAnalytics(courseId, lesson.id, totalLessonTime, watchedTime);
                 
                 // Update button visibility based on watched time
                 updateButtonVisibility(lesson);
@@ -474,6 +526,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const currentTime = new Date();
                 const timeDiff = (currentTime - watchStartTime) / 1000; // Convert to seconds
                 const totalWatchedTime = watchedTime + timeDiff;
+                
+                // Update total lesson time
+                if (lessonStartTime) {
+                    totalLessonTime = (currentTime - lessonStartTime) / 1000; // Convert to seconds
+                }
                 
                 // Update UI with current progress if needed
                 const lesson = currentCourse.lessons[currentLessonIndex];
@@ -696,6 +753,97 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error clearing watched time from localStorage:', error);
         }
+    }
+
+    // Save detailed lesson analytics to Firebase
+    function saveLessonAnalytics(courseId, lessonId, totalTime, watchedTime) {
+        if (currentUser && courseId && lessonId) {
+            // Save to Firebase analytics
+            firebaseServices.updateLessonAnalytics(
+                currentUser.uid,
+                courseId,
+                lessonId,
+                totalTime,
+                watchedTime >= minWatchTime // completion status
+            ).catch(error => {
+                console.error('Error saving lesson analytics:', error);
+            });
+            
+            // Also update user's overall analytics
+            updateUserOverallAnalytics(courseId, lessonId, totalTime, watchedTime >= minWatchTime);
+        }
+    }
+    
+    // Update user's overall analytics
+    function updateUserOverallAnalytics(courseId, lessonId, totalTime, isCompleted) {
+        if (!currentUser || !courseId || !lessonId) return;
+        
+        // Get course data to determine category
+        firebaseServices.getCourses()
+            .then(courses => {
+                const course = courses.find(c => c.id === courseId);
+                if (!course) return;
+                
+                // Update user analytics with category information
+                const { ref, get, update } = firebaseServices;
+                const analyticsRef = ref(rtdb, `userAnalytics/${currentUser.uid}`);
+                
+                get(analyticsRef)
+                    .then(snapshot => {
+                        const analyticsData = snapshot.val() || {};
+                        
+                        // Update favorite categories
+                        const category = course.category || 'General';
+                        const favoriteCategories = analyticsData.favoriteCategories || {};
+                        favoriteCategories[category] = (favoriteCategories[category] || 0) + 1;
+                        
+                        // Update learning streak
+                        const today = new Date().toISOString().split('T')[0];
+                        const lastActiveDate = analyticsData.lastActiveDate ? 
+                            new Date(analyticsData.lastActiveDate).toISOString().split('T')[0] : null;
+                        
+                        let learningStreak = analyticsData.learningStreak || 0;
+                        
+                        // If this is the first activity of the day, update streak
+                        if (lastActiveDate !== today) {
+                            // Check if it's a consecutive day
+                            if (lastActiveDate) {
+                                const yesterday = new Date(today);
+                                yesterday.setDate(yesterday.getDate() - 1);
+                                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                                
+                                if (lastActiveDate === yesterdayStr) {
+                                    learningStreak += 1;
+                                } else {
+                                    // Reset streak if not consecutive
+                                    learningStreak = 1;
+                                }
+                            } else {
+                                // First time user is active
+                                learningStreak = 1;
+                            }
+                        }
+                        
+                        // Prepare update data
+                        const updateData = {
+                            favoriteCategories: favoriteCategories,
+                            learningStreak: learningStreak,
+                            lastActiveDate: new Date().toISOString()
+                        };
+                        
+                        // Update analytics in Firebase
+                        update(analyticsRef, updateData)
+                            .catch(error => {
+                                console.error('Error updating user overall analytics:', error);
+                            });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching user analytics:', error);
+                    });
+            })
+            .catch(error => {
+                console.error('Error fetching courses for analytics:', error);
+            });
     }
     
     // Update progress UI

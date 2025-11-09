@@ -176,6 +176,233 @@ window.firebaseServices = {
         }
     },
 
+    // Function to initialize detailed analytics for a user
+    initializeUserAnalytics: async (userId) => {
+        try {
+            const { ref, get, set } = await import("firebase/database");
+            const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
+            const snapshot = await get(analyticsRef);
+            
+            // If analytics data doesn't exist, create it
+            if (!snapshot.exists()) {
+                const analyticsData = {
+                    totalStudyTime: 0,
+                    lessonsCompleted: 0,
+                    coursesCompleted: 0,
+                    dailyActivity: {},
+                    weeklyActivity: {},
+                    monthlyActivity: {},
+                    favoriteCategories: {},
+                    learningStreak: 0,
+                    lastActiveDate: null,
+                    createdAt: new Date().toISOString()
+                };
+                await set(analyticsRef, analyticsData);
+                return analyticsData;
+            }
+            
+            return snapshot.val();
+        } catch (error) {
+            console.error('Error initializing user analytics:', error);
+            throw error;
+        }
+    },
+
+    // Function to update lesson analytics
+    updateLessonAnalytics: async (userId, courseId, lessonId, timeSpent, completionStatus) => {
+        try {
+            const { ref, get, update } = await import("firebase/database");
+            
+            // Update lesson-specific analytics
+            const lessonAnalyticsRef = ref(rtdb, `userAnalytics/${userId}/lessonDetails/${courseId}/${lessonId}`);
+            const lessonData = {
+                timeSpent: timeSpent,
+                completed: completionStatus,
+                lastAccessed: new Date().toISOString(),
+                accesses: firebaseServices.increment(1)
+            };
+            await update(lessonAnalyticsRef, lessonData);
+            
+            // Update user overall analytics
+            const userAnalyticsRef = ref(rtdb, `userAnalytics/${userId}`);
+            const userData = {
+                totalStudyTime: firebaseServices.increment(timeSpent),
+                lessonsCompleted: completionStatus ? firebaseServices.increment(1) : 0,
+                lastActiveDate: new Date().toISOString()
+            };
+            await update(userAnalyticsRef, userData);
+            
+            // Update daily activity
+            const today = new Date().toISOString().split('T')[0];
+            const dailyActivityRef = ref(rtdb, `userAnalytics/${userId}/dailyActivity/${today}`);
+            const dailyData = {
+                studyTime: firebaseServices.increment(timeSpent),
+                lessonsCompleted: completionStatus ? firebaseServices.increment(1) : 0
+            };
+            await update(dailyActivityRef, dailyData);
+            
+            return true;
+        } catch (error) {
+            console.error('Error updating lesson analytics:', error);
+            throw error;
+        }
+    },
+
+    // Function to update course completion analytics
+    updateCourseCompletionAnalytics: async (userId, courseId) => {
+        try {
+            const { ref, update } = await import("firebase/database");
+            
+            // Update user overall analytics
+            const userAnalyticsRef = ref(rtdb, `userAnalytics/${userId}`);
+            const userData = {
+                coursesCompleted: firebaseServices.increment(1)
+            };
+            await update(userAnalyticsRef, userData);
+            
+            // Update course completion in user analytics
+            const courseCompletionRef = ref(rtdb, `userAnalytics/${userId}/completedCourses/${courseId}`);
+            const courseData = {
+                completedAt: new Date().toISOString(),
+                completionStatus: true
+            };
+            await update(courseCompletionRef, courseData);
+            
+            return true;
+        } catch (error) {
+            console.error('Error updating course completion analytics:', error);
+            throw error;
+        }
+    },
+
+    // Function to get user analytics
+    getUserAnalytics: async (userId) => {
+        try {
+            const { ref, get } = await import("firebase/database");
+            const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
+            const snapshot = await get(analyticsRef);
+            
+            if (snapshot.exists()) {
+                return snapshot.val();
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error fetching user analytics:', error);
+            throw error;
+        }
+    },
+
+    // Helper function for increment operations
+    increment: (value) => {
+        // This would be implemented with Firebase's increment functionality
+        // For now, we'll return the value for manual handling
+        return value;
+    },
+
+    // Function to aggregate user analytics data
+    aggregateUserAnalytics: async (userId) => {
+        try {
+            const { ref, get } = await import("firebase/database");
+            
+            // Get user analytics data
+            const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
+            const analyticsSnapshot = await get(analyticsRef);
+            
+            if (!analyticsSnapshot.exists()) {
+                return null;
+            }
+            
+            const analyticsData = analyticsSnapshot.val();
+            
+            // Calculate additional metrics
+            const aggregatedData = {
+                ...analyticsData,
+                averageStudyTimePerDay: 0,
+                mostActiveDay: null,
+                categoryDistribution: {}
+            };
+            
+            // Calculate average study time per day
+            if (analyticsData.dailyActivity) {
+                const dailyActivity = analyticsData.dailyActivity;
+                const totalDays = Object.keys(dailyActivity).length;
+                let totalStudyTime = 0;
+                let maxStudyTime = 0;
+                let mostActiveDay = null;
+                
+                Object.entries(dailyActivity).forEach(([date, activity]) => {
+                    totalStudyTime += activity.studyTime || 0;
+                    
+                    if ((activity.studyTime || 0) > maxStudyTime) {
+                        maxStudyTime = activity.studyTime || 0;
+                        mostActiveDay = date;
+                    }
+                });
+                
+                aggregatedData.averageStudyTimePerDay = totalDays > 0 ? totalStudyTime / totalDays : 0;
+                aggregatedData.mostActiveDay = mostActiveDay;
+            }
+            
+            // Calculate category distribution
+            if (analyticsData.lessonDetails) {
+                const lessonDetails = analyticsData.lessonDetails;
+                const categoryCount = {};
+                
+                // This would require mapping lessons to categories
+                // For now, we'll just return the existing favoriteCategories
+                aggregatedData.categoryDistribution = analyticsData.favoriteCategories || {};
+            }
+            
+            return aggregatedData;
+        } catch (error) {
+            console.error('Error aggregating user analytics:', error);
+            throw error;
+        }
+    },
+
+    // Function to get user analytics trends
+    getUserAnalyticsTrends: async (userId, days = 30) => {
+        try {
+            const { ref, get } = await import("firebase/database");
+            
+            // Get user analytics data
+            const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
+            const analyticsSnapshot = await get(analyticsRef);
+            
+            if (!analyticsSnapshot.exists()) {
+                return null;
+            }
+            
+            const analyticsData = analyticsSnapshot.val();
+            
+            // Get daily activity for the specified number of days
+            const dailyActivity = analyticsData.dailyActivity || {};
+            const dates = Object.keys(dailyActivity).sort();
+            
+            // Get the last N days
+            const recentDates = dates.slice(-days);
+            
+            // Prepare trend data
+            const trendData = {
+                studyTime: [],
+                lessonsCompleted: [],
+                dates: recentDates
+            };
+            
+            recentDates.forEach(date => {
+                const activity = dailyActivity[date] || {};
+                trendData.studyTime.push(activity.studyTime || 0);
+                trendData.lessonsCompleted.push(activity.lessonsCompleted || 0);
+            });
+            
+            return trendData;
+        } catch (error) {
+            console.error('Error getting user analytics trends:', error);
+            throw error;
+        }
+    },
+
     // Function to get a single user
     getUser: async (userId) => {
         try {
