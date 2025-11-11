@@ -51,9 +51,10 @@ document.addEventListener('DOMContentLoaded', function() {
             firebaseServices.getCourses(),
             firebaseServices.getUserEnrollments(userId),
             firebaseServices.getCategories(), // Also fetch categories to map IDs to names
-            firebaseServices.getUserAnalytics(userId) // Fetch user analytics
+            firebaseServices.getUserAnalytics(userId), // Fetch user analytics
+            firebaseServices.getUserAchievements(userId) // Fetch user achievements
         ])
-        .then(([courses, userEnrollments, categories, userAnalytics]) => {
+        .then(([courses, userEnrollments, categories, userAnalytics, userAchievements]) => {
             // Create a map of category IDs to names
             const categoryMap = {};
             categories.forEach(category => {
@@ -65,6 +66,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update analytics stats
             updateAnalyticsStats(userAnalytics);
+            
+            // Update achievements
+            updateAchievements(userAchievements, userId);
             
             // Render courses
             renderCourses(userEnrollments, courses, categoryMap);
@@ -747,7 +751,48 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
     
-
+    // Update achievements
+    function updateAchievements(achievements, userId) {
+        const achievementsContainer = document.getElementById('achievements-container');
+        if (!achievementsContainer) return;
+        
+        // Filter earned achievements
+        const earnedAchievements = achievements.filter(achievement => achievement.earned);
+        
+        // Render achievements
+        if (earnedAchievements.length > 0) {
+            let achievementsHTML = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+            
+            earnedAchievements.forEach(achievement => {
+                achievementsHTML += `
+                    <div class="bg-white rounded-lg shadow p-4 flex items-center">
+                        <div class="flex-shrink-0 h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                            <svg class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-medium text-gray-900">${achievement.name}</h4>
+                            <p class="text-gray-600">${achievement.description}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            achievementsHTML += '</div>';
+            achievementsContainer.innerHTML = achievementsHTML;
+        } else {
+            achievementsContainer.innerHTML = `
+                <div class="text-center py-8">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.982 8.982M12 2.944a11.955 11.955 0 018.982 8.982M5.018 15.018A8.96 8.96 0 0112 12a8.96 8.96 0 016.982 3.018M12 12v9m-4-9h8" />
+                    </svg>
+                    <h3 class="mt-2 text-lg font-medium text-gray-900">No achievements yet</h3>
+                    <p class="mt-1 text-gray-500">Complete courses and maintain streaks to earn achievements.</p>
+                </div>
+            `;
+        }
+    }
     
     // Handle logout
     if (logoutBtn) {
@@ -864,7 +909,7 @@ document.addEventListener('DOMContentLoaded', function() {
             patternsContainer.innerHTML = `
                 <div class="text-center text-gray-500">
                     <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm8-12a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                     <p class="mt-2">No learning pattern data available</p>
                 </div>
