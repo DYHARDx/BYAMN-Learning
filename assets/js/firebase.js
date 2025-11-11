@@ -655,5 +655,82 @@ window.firebaseServices = {
             console.error('Error fetching user achievements:', error);
             throw error;
         }
+    },
+    
+    // Function to track recommendation interactions
+    trackRecommendationInteraction: async (userId, courseId, action) => {
+        try {
+            const { ref, push, set } = await import("firebase/database");
+            const interactionRef = push(ref(rtdb, 'recommendationInteractions'));
+            const interaction = {
+                userId: userId,
+                courseId: courseId,
+                action: action, // 'view', 'click', 'enroll'
+                timestamp: new Date().toISOString()
+            };
+            await set(interactionRef, interaction);
+            return interaction;
+        } catch (error) {
+            console.error('Error tracking recommendation interaction:', error);
+            throw error;
+        }
+    },
+    
+    // Function to get user's recommendation interactions
+    getUserRecommendationInteractions: async (userId) => {
+        try {
+            const { ref, get, query, orderByChild, equalTo } = await import("firebase/database");
+            const interactionsRef = ref(rtdb, 'recommendationInteractions');
+            const interactionsQuery = query(interactionsRef, orderByChild('userId'), equalTo(userId));
+            const snapshot = await get(interactionsQuery);
+            
+            if (snapshot.exists()) {
+                const interactions = [];
+                snapshot.forEach((childSnapshot) => {
+                    interactions.push({
+                        id: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+                return interactions;
+            }
+            
+            return [];
+        } catch (error) {
+            console.error('Error fetching user recommendation interactions:', error);
+            throw error;
+        }
+    },
+    
+    // Function to update user's favorite categories based on interactions
+    updateUserFavoriteCategories: async (userId, category, increment = 1) => {
+        try {
+            const { ref, get, update } = await import("firebase/database");
+            const analyticsRef = ref(rtdb, `userAnalytics/${userId}`);
+            const snapshot = await get(analyticsRef);
+            
+            let favoriteCategories = {};
+            if (snapshot.exists() && snapshot.val().favoriteCategories) {
+                favoriteCategories = { ...snapshot.val().favoriteCategories };
+            }
+            
+            // Update category count
+            favoriteCategories[category] = (favoriteCategories[category] || 0) + increment;
+            
+            // Remove categories with zero or negative counts
+            Object.keys(favoriteCategories).forEach(key => {
+                if (favoriteCategories[key] <= 0) {
+                    delete favoriteCategories[key];
+                }
+            });
+            
+            // Update analytics
+            await update(analyticsRef, { favoriteCategories });
+            
+            return favoriteCategories;
+        } catch (error) {
+            console.error('Error updating user favorite categories:', error);
+            throw error;
+        }
     }
 };
