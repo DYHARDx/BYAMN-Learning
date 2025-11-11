@@ -173,367 +173,95 @@ document.addEventListener('DOMContentLoaded', function() {
         renderCategoryChart(enrollments, courses, categoryMap);
     }
     
-    // Render analytics charts
-    function renderAnalyticsCharts(analytics) {
-        if (!analytics) {
-            // Show empty state for analytics charts
-            if (studyTimeChartContainer) {
-                studyTimeChartContainer.innerHTML = `
-                    <div class="text-center text-gray-500">
-                        <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm8-12a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2z" />
-                        </svg>
-                        <p class="mt-2">No analytics data available</p>
-                    </div>
-                `;
-            }
-            
-            if (activityChartContainer) {
-                activityChartContainer.innerHTML = `
-                    <div class="text-center text-gray-500">
-                        <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <p class="mt-2">No activity data available</p>
-                    </div>
-                `;
-            }
-            
-            if (streakChartContainer) {
-                streakChartContainer.innerHTML = `
-                    <div class="text-center text-gray-500">
-                        <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p class="mt-2">No streak data available</p>
-                    </div>
-                `;
-            }
-            return;
-        }
-        
-        // Render study time chart
-        if (studyTimeChartContainer) {
-            renderStudyTimeChart(analytics);
-        }
-        
-        // Render activity chart
-        if (activityChartContainer) {
-            renderActivityChart(analytics);
-        }
-        
-        // Render streak chart
-        if (streakChartContainer) {
-            renderStreakChart(analytics);
-        }
-    }
-    
-    // Render progress distribution chart
+    // Render progress chart (enrollment progress distribution)
     function renderProgressChart(enrollments) {
-        // Calculate progress distribution
-        const notStarted = enrollments.filter(e => e.progress === 0).length;
-        const inProgress = enrollments.filter(e => e.progress > 0 && e.progress < 100).length;
-        const completed = enrollments.filter(e => e.progress === 100).length;
-        const total = enrollments.length;
+        const container = document.getElementById('progress-chart-container');
+        if (!container) return;
         
-        // Donut chart implementation for learning progress
-        const chartHTML = `
-            <div class="w-full h-full flex flex-col items-center justify-center">
-                <div class="relative w-48 h-48 mb-6">
-                    <!-- Donut chart background -->
-                    <div class="absolute inset-0 rounded-full border-8 border-gray-200"></div>
-                    
-                    <!-- Not Started segment -->
-                    <div class="absolute inset-0 rounded-full border-8 border-gray-400 clip-segment" 
-                         style="clip-path: ${getClipPath(0, (notStarted / Math.max(1, total)) * 100)};"></div>
-                    
-                    <!-- In Progress segment -->
-                    <div class="absolute inset-0 rounded-full border-8 border-amber-500 clip-segment" 
-                         style="clip-path: ${getClipPath((notStarted / Math.max(1, total)) * 100, ((notStarted + inProgress) / Math.max(1, total)) * 100)};"></div>
-                    
-                    <!-- Completed segment -->
-                    <div class="absolute inset-0 rounded-full border-8 border-green-500 clip-segment" 
-                         style="clip-path: ${getClipPath(((notStarted + inProgress) / Math.max(1, total)) * 100, 100)};"></div>
-                    
-                    <!-- Center label -->
-                    <div class="absolute inset-0 flex flex-col items-center justify-center">
-                        <span class="text-2xl font-bold text-gray-900">${total}</span>
-                        <span class="text-sm text-gray-500">Total Courses</span>
-                    </div>
-                </div>
-                
-                <!-- Legend -->
-                <div class="flex flex-wrap justify-center gap-4 mt-4">
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-gray-400 rounded-full mr-2"></div>
-                        <span class="text-sm text-gray-600">Not Started (${notStarted})</span>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-amber-500 rounded-full mr-2"></div>
-                        <span class="text-sm text-gray-600">In Progress (${inProgress})</span>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
-                        <span class="text-sm text-gray-600">Completed (${completed})</span>
-                    </div>
-                </div>
-                
-                <div class="mt-6 text-center">
-                    <p class="text-sm text-gray-600 font-medium">Your Learning Progress Distribution</p>
-                </div>
-            </div>
-        `;
-        
-        progressChartContainer.innerHTML = chartHTML;
-    }
-    
-    // Helper function to generate clip-path for donut segments
-    function getClipPath(startPercent, endPercent) {
-        if (startPercent >= endPercent) return 'inset(0)';
-        
-        // Convert percentages to angles (0-360 degrees)
-        const startAngle = (startPercent / 100) * 360;
-        const endAngle = (endPercent / 100) * 360;
-        
-        // For a full circle, we need a different approach
-        if (endAngle - startAngle >= 360) {
-            return 'inset(0)';
-        }
-        
-        // Calculate points for the segment
-        const centerX = 50;
-        const centerY = 50;
-        const radius = 50;
-        
-        // Convert angles to radians
-        const startRad = (startAngle - 90) * Math.PI / 180;
-        const endRad = (endAngle - 90) * Math.PI / 180;
-        
-        // Calculate start and end points
-        const startX = centerX + radius * Math.cos(startRad);
-        const startY = centerY + radius * Math.sin(startRad);
-        const endX = centerX + radius * Math.cos(endRad);
-        const endY = centerY + radius * Math.sin(endRad);
-        
-        // Large arc flag (1 if angle > 180 degrees)
-        const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
-        
-        // Create path data for the segment
-        if (startAngle === 0 && endAngle === 360) {
-            // Full circle
-            return 'inset(0)';
-        } else {
-            // Partial circle
-            return `path("M ${centerX},${centerY} L ${startX},${startY} A ${radius},${radius} 0 ${largeArcFlag},1 ${endX},${endY} Z")`;
-        }
-    }
-    
-    // Render study time chart
-    function renderStudyTimeChart(analytics) {
-        // Get daily activity data for the last 7 days
-        const dailyActivity = analytics.dailyActivity || {};
-        const dates = Object.keys(dailyActivity).sort().slice(-7); // Last 7 days
-        
-        if (dates.length === 0) {
-            studyTimeChartContainer.innerHTML = `
+        if (enrollments.length === 0) {
+            container.innerHTML = `
                 <div class="text-center text-gray-500">
                     <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm8-12a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2z" />
                     </svg>
-                    <p class="mt-2">No study time data available</p>
+                    <p class="mt-2">No progress data available</p>
                 </div>
             `;
             return;
         }
         
-        // Prepare data for chart
-        const studyTimes = dates.map(date => {
-            const activity = dailyActivity[date] || {};
-            return (activity.studyTime || 0) / 60; // Convert seconds to minutes
+        // Categorize enrollments by progress
+        const progressCategories = {
+            'Not Started': 0,
+            '1-25%': 0,
+            '26-50%': 0,
+            '51-75%': 0,
+            '76-99%': 0,
+            'Completed': 0
+        };
+        
+        enrollments.forEach(enrollment => {
+            const progress = enrollment.progress || 0;
+            if (progress === 0) {
+                progressCategories['Not Started']++;
+            } else if (progress <= 25) {
+                progressCategories['1-25%']++;
+            } else if (progress <= 50) {
+                progressCategories['26-50%']++;
+            } else if (progress <= 75) {
+                progressCategories['51-75%']++;
+            } else if (progress < 100) {
+                progressCategories['76-99%']++;
+            } else {
+                progressCategories['Completed']++;
+            }
         });
         
-        const maxTime = Math.max(...studyTimes, 1); // Ensure at least 1 for scaling
-        
         // Generate chart HTML
-        const chartHTML = `
-            <div class="w-full h-full flex flex-col">
-                <div class="flex items-end flex-1 space-x-2 md:space-x-3 px-2 py-4">
-                    ${dates.map((date, index) => {
-                        const time = studyTimes[index];
-                        const heightPercent = Math.max(10, (time / maxTime) * 100);
-                        const day = new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
-                        
-                        return `
-                            <div class="flex flex-col items-center flex-1 group min-w-[30px]">
-                                <div class="text-xs text-gray-500 mb-1 font-bold">${Math.round(time)}m</div>
-                                <div class="w-3/4 md:w-3/4 bg-gradient-to-t from-indigo-500 to-purple-600 rounded-t-lg transition-all duration-700 ease-out hover:opacity-90 hover:shadow-lg transform hover:-translate-y-1" 
-                                     style="height: ${heightPercent}%">
-                                </div>
-                                <div class="text-xs text-gray-600 mt-2 text-center truncate w-full px-1 font-semibold" 
-                                     style="max-width: 40px;">${day}</div>
-                            </div>
-                        `;
-                    }).join('')}
+        let chartHTML = `
+            <div class="flex items-end justify-between h-48 px-2">
+        `;
+        
+        const categories = Object.keys(progressCategories);
+        const values = Object.values(progressCategories);
+        const maxValue = Math.max(...values, 1); // Avoid division by zero
+        
+        categories.forEach((category, index) => {
+            const value = values[index];
+            const heightPercent = (value / maxValue) * 80; // Max 80% height
+            chartHTML += `
+                <div class="flex flex-col items-center flex-1 px-1">
+                    <div class="flex flex-col items-center justify-end w-full h-full">
+                        <div class="w-3/4 bg-indigo-500 rounded-t" style="height: ${heightPercent}%; min-height: 4px;"></div>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <p class="text-xs font-medium text-gray-900">${value}</p>
+                        <p class="text-xs text-gray-500 truncate">${category}</p>
+                    </div>
                 </div>
-                
-                <div class="mt-4 md:mt-6 text-center">
-                    <p class="text-sm text-gray-600 font-medium">Study Time (Last 7 Days)</p>
-                </div>
+            `;
+        });
+        
+        chartHTML += `
+            </div>
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-500">Course progress distribution</p>
             </div>
         `;
         
-        studyTimeChartContainer.innerHTML = chartHTML;
+        container.innerHTML = chartHTML;
     }
     
-    // Render activity chart
-    function renderActivityChart(analytics) {
-        // Get daily activity data for the last 14 days
-        const dailyActivity = analytics.dailyActivity || {};
-        const dates = Object.keys(dailyActivity).sort().slice(-14); // Last 14 days
+    // Render category chart
+    function renderCategoryChart(enrollments, courses, categoryMap) {
+        const container = document.getElementById('category-chart-container');
+        if (!container) return;
         
-        if (dates.length === 0) {
-            activityChartContainer.innerHTML = `
+        if (enrollments.length === 0 || courses.length === 0) {
+            container.innerHTML = `
                 <div class="text-center text-gray-500">
                     <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <p class="mt-2">No activity data available</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // Prepare data for chart (lessons completed per day)
-        const lessonsCompleted = dates.map(date => {
-            const activity = dailyActivity[date] || {};
-            return activity.lessonsCompleted || 0;
-        });
-        
-        const maxLessons = Math.max(...lessonsCompleted, 1); // Ensure at least 1 for scaling
-        
-        // Generate chart HTML
-        const chartHTML = `
-            <div class="w-full h-full flex flex-col">
-                <div class="flex items-end flex-1 space-x-1 md:space-x-2 px-2 py-4">
-                    ${dates.map((date, index) => {
-                        const lessons = lessonsCompleted[index];
-                        const heightPercent = Math.max(5, (lessons / maxLessons) * 100);
-                        const day = new Date(date).getDate();
-                        
-                        return `
-                            <div class="flex flex-col items-center flex-1 group min-w-[20px]">
-                                <div class="text-xs text-gray-500 mb-1 font-bold">${lessons}</div>
-                                <div class="w-full bg-gradient-to-t from-blue-500 to-cyan-600 rounded-t-lg transition-all duration-700 ease-out hover:opacity-90 hover:shadow-lg transform hover:-translate-y-1" 
-                                     style="height: ${heightPercent}%">
-                                </div>
-                                <div class="text-xs text-gray-600 mt-1 text-center font-semibold">${day}</div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-                
-                <div class="mt-4 md:mt-6 text-center">
-                    <p class="text-sm text-gray-600 font-medium">Lessons Completed (Last 14 Days)</p>
-                </div>
-            </div>
-        `;
-        
-        activityChartContainer.innerHTML = chartHTML;
-    }
-    
-    // Render streak chart
-    function renderStreakChart(analytics) {
-        // Get daily activity data for the last 30 days
-        const dailyActivity = analytics.dailyActivity || {};
-        const dates = Object.keys(dailyActivity).sort().slice(-30); // Last 30 days
-        
-        if (dates.length === 0) {
-            streakChartContainer.innerHTML = `
-                <div class="text-center text-gray-500">
-                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p class="mt-2">No streak data available</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // Prepare data for chart (check if user studied each day)
-        const studyDays = dates.map(date => {
-            const activity = dailyActivity[date] || {};
-            return (activity.studyTime || 0) > 0 ? 1 : 0;
-        });
-        
-        // Generate chart HTML (calendar-like view)
-        const chartHTML = `
-            <div class="w-full h-full flex flex-col">
-                <div class="grid grid-cols-7 gap-1 md:gap-2 px-2 py-4">
-                    ${dates.map((date, index) => {
-                        const studied = studyDays[index];
-                        const day = new Date(date).getDate();
-                        const bgColor = studied ? 'bg-green-500' : 'bg-gray-200';
-                        
-                        return `
-                            <div class="flex items-center justify-center aspect-square ${bgColor} rounded transition-all duration-300 hover:opacity-90 hover:shadow-lg" 
-                                 title="${date}: ${studied ? 'Studied' : 'No activity'}">
-                                <span class="text-xs font-bold text-white">${day}</span>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-                
-                <div class="mt-4 md:mt-6 text-center">
-                    <p class="text-sm text-gray-600 font-medium">Study Activity (Last 30 Days)</p>
-                    <div class="flex justify-center mt-2 space-x-4">
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 bg-green-500 rounded mr-1"></div>
-                            <span class="text-xs text-gray-600">Studied</span>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 bg-gray-200 rounded mr-1"></div>
-                            <span class="text-xs text-gray-600">No Activity</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        streakChartContainer.innerHTML = chartHTML;
-    }
-    
-    // Render category distribution chart
-    function renderCategoryChart(enrollments, courses, categoryMap) {
-        // Match enrollments with courses to get categories
-        const enrichedEnrollments = enrollments.map(enrollment => {
-            const course = courses.find(c => c.id === enrollment.courseId);
-            return {
-                ...enrollment,
-                course: course || null
-            };
-        });
-        
-        // Count courses by category
-        const categoryCounts = {};
-        enrichedEnrollments.forEach(enrollment => {
-            if (enrollment.course && enrollment.course.category) {
-                // Map category ID to name if it's an ID, otherwise use as is
-                const categoryId = enrollment.course.category;
-                const categoryName = categoryMap[categoryId] || categoryId;
-                categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
-            }
-        });
-        
-        // Convert to array and sort by count
-        const sortedCategories = Object.entries(categoryCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5); // Top 5 categories
-        
-        if (sortedCategories.length === 0) {
-            categoryChartContainer.innerHTML = `
-                <div class="text-center text-gray-500">
-                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                     <p class="mt-2">No category data available</p>
                 </div>
@@ -541,57 +269,245 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Generate enhanced bar chart with animations and interactive elements
-        const maxCount = Math.max(...sortedCategories.map(c => c[1]));
-        const chartHTML = `
-            <div class="w-full h-full flex flex-col">
-                <div class="flex items-end flex-1 space-x-2 md:space-x-3 px-2 py-4">
-                    ${sortedCategories.map(([category, count], index) => {
-                        // Generate different colors for each bar
-                        const colors = [
-                            'from-indigo-500 to-purple-600',
-                            'from-blue-500 to-cyan-600',
-                            'from-green-500 to-emerald-600',
-                            'from-amber-500 to-orange-600',
-                            'from-rose-500 to-pink-600'
-                        ];
-                        const colorClass = colors[index % colors.length];
-                        
-                        // Calculate height percentage
-                        const heightPercent = Math.max(20, (count / maxCount) * 100);
-                        
-                        // Calculate width based on text length for better label fit
-                        const labelWidth = Math.max(50, category.length * 6);
-                        
-                        return `
-                            <div class="flex flex-col items-center flex-1 group min-w-[50px] md:min-w-[60px]">
-                                <div class="text-xs text-gray-500 mb-1 font-bold transition-all duration-300 group-hover:text-gray-900">${count}</div>
-                                <div class="w-3/4 md:w-3/4 bg-gradient-to-t ${colorClass} rounded-t-lg transition-all duration-700 ease-out hover:opacity-90 hover:shadow-lg transform hover:-translate-y-1" 
-                                     style="height: ${heightPercent}%">
-                                </div>
-                                <div class="text-xs text-gray-600 mt-2 text-center truncate w-full px-1 font-semibold transition-all duration-300 group-hover:text-gray-900" 
-                                     style="max-width: ${labelWidth}px;">${category}</div>
-                            </div>
-                        `;
-                    }).join('')}
+        // Count courses by category
+        const categoryCount = {};
+        enrollments.forEach(enrollment => {
+            const course = courses.find(c => c.id === enrollment.courseId);
+            if (course && course.category) {
+                const categoryName = categoryMap[course.category] || course.category;
+                categoryCount[categoryName] = (categoryCount[categoryName] || 0) + 1;
+            }
+        });
+        
+        // If no categories found, show message
+        if (Object.keys(categoryCount).length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p class="mt-2">No category data available</p>
                 </div>
-                
-                <div class="mt-4 md:mt-6 text-center">
-                    <p class="text-sm text-gray-600 font-medium">Course Categories Distribution</p>
-                    <div class="mt-2 flex justify-center">
-                        <div class="inline-flex items-center text-xs text-gray-500">
-                            <span class="flex h-3 w-3">
-                                <span class="animate-ping absolute h-3 w-3 rounded-full bg-indigo-400 opacity-75"></span>
-                                <span class="relative h-3 w-3 rounded-full bg-indigo-500"></span>
-                            </span>
-                            <span class="ml-2">Top 5 Categories</span>
-                        </div>
+            `;
+            return;
+        }
+        
+        // Generate chart HTML
+        let chartHTML = `
+            <div class="flex items-end justify-between h-48 px-2">
+        `;
+        
+        const categories = Object.keys(categoryCount);
+        const values = Object.values(categoryCount);
+        const maxValue = Math.max(...values, 1); // Avoid division by zero
+        
+        categories.forEach((category, index) => {
+            const value = values[index];
+            const heightPercent = (value / maxValue) * 80; // Max 80% height
+            chartHTML += `
+                <div class="flex flex-col items-center flex-1 px-1">
+                    <div class="flex flex-col items-center justify-end w-full h-full">
+                        <div class="w-3/4 bg-purple-500 rounded-t" style="height: ${heightPercent}%; min-height: 4px;"></div>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <p class="text-xs font-medium text-gray-900">${value}</p>
+                        <p class="text-xs text-gray-500 truncate">${category}</p>
                     </div>
                 </div>
+            `;
+        });
+        
+        chartHTML += `
+            </div>
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-500">Enrolled courses by category</p>
             </div>
         `;
         
-        categoryChartContainer.innerHTML = chartHTML;
+        container.innerHTML = chartHTML;
+    }
+    
+    // Render analytics charts
+    function renderAnalyticsCharts(analytics) {
+        if (!analytics) {
+            // Show empty state for analytics charts
+            renderEmptyChart('study-time-chart-container', 'Study Time');
+            renderEmptyChart('activity-chart-container', 'Activity');
+            renderEmptyChart('streak-chart-container', 'Study Streak');
+            return;
+        }
+        
+        // Render study time chart (last 7 days)
+        renderStudyTimeChart(analytics);
+        
+        // Render activity chart (lessons completed over time)
+        renderActivityChart(analytics);
+        
+        // Render streak chart
+        renderStreakChart(analytics);
+    }
+    
+    // Render study time chart
+    function renderStudyTimeChart(analytics) {
+        const container = document.getElementById('study-time-chart-container');
+        if (!container) return;
+        
+        // Get last 7 days of study time data
+        const dailyActivity = analytics.dailyActivity || {};
+        const dates = Object.keys(dailyActivity).sort().slice(-7);
+        
+        if (dates.length === 0) {
+            renderEmptyChart('study-time-chart-container', 'Study Time');
+            return;
+        }
+        
+        // Prepare data for chart
+        const studyTimes = dates.map(date => {
+            const activity = dailyActivity[date] || {};
+            return (activity.studyTime || 0) / 60; // Convert to minutes
+        });
+        
+        const maxValue = Math.max(...studyTimes, 1);
+        
+        // Generate chart HTML
+        let chartHTML = `
+            <div class="flex items-end justify-between h-48 px-2">
+        `;
+        
+        dates.forEach((date, index) => {
+            const studyTime = studyTimes[index];
+            const heightPercent = (studyTime / maxValue) * 80; // Max 80% height
+            const displayDate = new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
+            
+            chartHTML += `
+                <div class="flex flex-col items-center flex-1 px-1">
+                    <div class="flex flex-col items-center justify-end w-full h-full">
+                        <div class="w-3/4 bg-indigo-500 rounded-t" style="height: ${heightPercent}%; min-height: 4px;"></div>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <p class="text-xs font-medium text-gray-900">${Math.round(studyTime)}m</p>
+                        <p class="text-xs text-gray-500">${displayDate}</p>
+                    </div>
+                </div>
+            `;
+        });
+        
+        chartHTML += `
+            </div>
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-500">Minutes studied per day (last 7 days)</p>
+            </div>
+        `;
+        
+        container.innerHTML = chartHTML;
+    }
+    
+    // Render activity chart
+    function renderActivityChart(analytics) {
+        const container = document.getElementById('activity-chart-container');
+        if (!container) return;
+        
+        // Get last 7 days of activity data
+        const dailyActivity = analytics.dailyActivity || {};
+        const dates = Object.keys(dailyActivity).sort().slice(-7);
+        
+        if (dates.length === 0) {
+            renderEmptyChart('activity-chart-container', 'Activity');
+            return;
+        }
+        
+        // Prepare data for chart
+        const lessonsCompleted = dates.map(date => {
+            const activity = dailyActivity[date] || {};
+            return activity.lessonsCompleted || 0;
+        });
+        
+        const maxValue = Math.max(...lessonsCompleted, 1);
+        
+        // Generate chart HTML
+        let chartHTML = `
+            <div class="flex items-end justify-between h-48 px-2">
+        `;
+        
+        dates.forEach((date, index) => {
+            const lessons = lessonsCompleted[index];
+            const heightPercent = (lessons / maxValue) * 80; // Max 80% height
+            const displayDate = new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
+            
+            chartHTML += `
+                <div class="flex flex-col items-center flex-1 px-1">
+                    <div class="flex flex-col items-center justify-end w-full h-full">
+                        <div class="w-3/4 bg-green-500 rounded-t" style="height: ${heightPercent}%; min-height: 4px;"></div>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <p class="text-xs font-medium text-gray-900">${lessons}</p>
+                        <p class="text-xs text-gray-500">${displayDate}</p>
+                    </div>
+                </div>
+            `;
+        });
+        
+        chartHTML += `
+            </div>
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-500">Lessons completed per day (last 7 days)</p>
+            </div>
+        `;
+        
+        container.innerHTML = chartHTML;
+    }
+    
+    // Render streak chart
+    function renderStreakChart(analytics) {
+        const container = document.getElementById('streak-chart-container');
+        if (!container) return;
+        
+        const currentStreak = analytics.currentStreak || 0;
+        const longestStreak = analytics.longestStreak || 0;
+        
+        // Generate chart HTML
+        let chartHTML = `
+            <div class="flex items-end justify-center h-48 px-2">
+                <div class="flex flex-col items-center px-4">
+                    <div class="flex flex-col items-center justify-end w-full h-full">
+                        <div class="w-16 bg-amber-500 rounded-t" style="height: ${Math.min((currentStreak / Math.max(longestStreak, 1)) * 80, 80)}%; min-height: 4px;"></div>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <p class="text-xs font-medium text-gray-900">${currentStreak}</p>
+                        <p class="text-xs text-gray-500">Current</p>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center px-4">
+                    <div class="flex flex-col items-center justify-end w-full h-full">
+                        <div class="w-16 bg-purple-500 rounded-t" style="height: 80%; min-height: 4px;"></div>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <p class="text-xs font-medium text-gray-900">${longestStreak}</p>
+                        <p class="text-xs text-gray-500">Longest</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-500">Learning streaks (days)</p>
+            </div>
+        `;
+        
+        container.innerHTML = chartHTML;
+    }
+    
+    // Render empty chart
+    function renderEmptyChart(containerId, title) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        container.innerHTML = `
+            <div class="text-center text-gray-500">
+                <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p class="mt-2">No ${title.toLowerCase()} data available</p>
+            </div>
+        `;
     }
     
     // Render courses

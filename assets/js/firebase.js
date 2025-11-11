@@ -303,8 +303,6 @@ window.firebaseServices = {
     // Function to aggregate user analytics data
     aggregateUserAnalytics: async (userId) => {
         try {
-            const { ref, get } = await import("firebase/database");
-            
             // Get user analytics data
             const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
             const analyticsSnapshot = await get(analyticsRef);
@@ -364,8 +362,6 @@ window.firebaseServices = {
     // Function to get user analytics trends
     getUserAnalyticsTrends: async (userId, days = 30) => {
         try {
-            const { ref, get } = await import("firebase/database");
-            
             // Get user analytics data
             const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
             const analyticsSnapshot = await get(analyticsRef);
