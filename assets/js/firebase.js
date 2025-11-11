@@ -655,5 +655,212 @@ window.firebaseServices = {
             console.error('Error fetching user achievements:', error);
             throw error;
         }
+    },
+    
+    // Function to track recommendation interactions
+    trackRecommendationInteraction: async (userId, courseId, interactionType) => {
+        try {
+            const { ref, get, update } = await import("firebase/database");
+            
+            // Reference to user's recommendation interactions
+            const interactionsRef = ref(rtdb, `userAnalytics/${userId}/recommendationInteractions/${courseId}`);
+            const interactionData = {
+                type: interactionType,
+                timestamp: new Date().toISOString()
+            };
+            await update(interactionsRef, interactionData);
+            
+            return true;
+        } catch (error) {
+            console.error('Error tracking recommendation interaction:', error);
+            throw error;
+        }
+    },
+    
+    // Function to get user's recommendation interactions
+    getUserRecommendationInteractions: async (userId) => {
+        try {
+            const { ref, get } = await import("firebase/database");
+            
+            // Reference to user's recommendation interactions
+            const interactionsRef = ref(rtdb, `userAnalytics/${userId}/recommendationInteractions`);
+            const snapshot = await get(interactionsRef);
+            
+            if (!snapshot.exists()) {
+                return {};
+            }
+            
+            return snapshot.val();
+        } catch (error) {
+            console.error('Error fetching user recommendation interactions:', error);
+            throw error;
+        }
+    },
+    
+    // Function to update user's favorite categories based on interactions
+    updateUserFavoriteCategories: async (userId) => {
+        try {
+            const { ref, get, update } = await import("firebase/database");
+            
+            // Get user's recommendation interactions
+            const interactionsRef = ref(rtdb, `userAnalytics/${userId}/recommendationInteractions`);
+            const interactionsSnapshot = await get(interactionsRef);
+            
+            if (!interactionsSnapshot.exists()) {
+                return {};
+            }
+            
+            const interactions = interactionsSnapshot.val();
+            const categoryCount = {};
+            
+            // Count interactions per category
+            for (const courseId in interactions) {
+                const course = await firebaseServices.getCourse(courseId);
+                if (course && course.category) {
+                    categoryCount[course.category] = (categoryCount[course.category] || 0) + 1;
+                }
+            }
+            
+            // Update user's favorite categories
+            const favoriteCategoriesRef = ref(rtdb, `userAnalytics/${userId}/favoriteCategories`);
+            await update(favoriteCategoriesRef, categoryCount);
+            
+            return categoryCount;
+        } catch (error) {
+            console.error('Error updating user favorite categories:', error);
+            throw error;
+        }
+    },
+    
+    // Smart search function for courses
+    smartCourseSearch: async (searchTerm, filters = {}) => {
+        try {
+            const { ref, get } = await import("firebase/database");
+            const coursesRef = ref(rtdb, 'courses');
+            const snapshot = await get(coursesRef);
+            const coursesData = snapshot.val();
+
+            // Convert object to array format
+            const courses = [];
+            if (coursesData) {
+                Object.keys(coursesData).forEach(key => {
+                    courses.push({ id: key, ...coursesData[key] });
+                });
+            }
+
+            // Apply search term filtering
+            let filteredCourses = courses;
+            if (searchTerm) {
+                filteredCourses = courses.filter(course => {
+                    // Split search term into words for better matching
+                    const searchWords = searchTerm.toLowerCase().split(/\s+/);
+                    
+                    // Fields to search in
+                    const searchableFields = [
+                        course.title,
+                        course.description,
+                        course.category,
+                        course.instructor,
+                        course.language,
+                        course.difficulty
+                    ].filter(Boolean).map(field => field.toLowerCase());
+                    
+                    // Check for exact phrase match
+                    const phraseMatch = searchableFields.some(field => 
+                        field.includes(searchTerm.toLowerCase())
+                    );
+                    
+                    if (phraseMatch) return true;
+                    
+                    // Check for word matches
+                    return searchWords.every(word => 
+                        searchableFields.some(field => field.includes(word))
+                    );
+                });
+            }
+
+            // Apply additional filters
+            if (filters.category && filters.category !== 'all') {
+                filteredCourses = filteredCourses.filter(course => 
+                    course.category && course.category.toLowerCase() === filters.category.toLowerCase()
+                );
+            }
+            
+            if (filters.difficulty && filters.difficulty !== 'all') {
+                filteredCourses = filteredCourses.filter(course => 
+                    course.difficulty && course.difficulty.toLowerCase() === filters.difficulty.toLowerCase()
+                );
+            }
+            
+            if (filters.duration && filters.duration !== 'all') {
+                filteredCourses = filteredCourses.filter(course => {
+                    if (!course.lessons || !Array.isArray(course.lessons)) return false;
+                    
+                    const totalDuration = course.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+                    
+                    switch (filters.duration) {
+                        case 'short':
+                            return totalDuration <= 3600; // <= 1 hour
+                        case 'medium':
+                            return totalDuration > 3600 && totalDuration <= 10800; // 1-3 hours
+                        case 'long':
+                            return totalDuration > 10800; // > 3 hours
+                        default:
+                            return true;
+                    }
+                });
+            }
+            
+            if (filters.minRating) {
+                filteredCourses = filteredCourses.filter(course => 
+                    course.rating && course.rating >= parseFloat(filters.minRating)
+                );
+            }
+            
+            if (filters.language && filters.language !== 'all') {
+                filteredCourses = filteredCourses.filter(course => 
+                    course.language && course.language.toLowerCase() === filters.language.toLowerCase()
+                );
+            }
+
+            return filteredCourses;
+        } catch (error) {
+            console.error('Error performing smart course search:', error);
+            throw error;
+        }
+    },
+    
+    // Get available languages for filtering
+    getAvailableLanguages: async () => {
+        try {
+            const courses = await firebaseServices.getCourses();
+            const languages = [...new Set(courses.map(course => course.language).filter(Boolean))];
+            return languages;
+        } catch (error) {
+            console.error('Error fetching available languages:', error);
+            return ['English']; // Default fallback
+        }
+    },
+    
+    // Get course categories with counts
+    getCourseCategoriesWithCounts: async () => {
+        try {
+            const courses = await firebaseServices.getCourses();
+            const categoryCounts = {};
+            
+            courses.forEach(course => {
+                if (course.category) {
+                    categoryCounts[course.category] = (categoryCounts[course.category] || 0) + 1;
+                }
+            });
+            
+            // Convert to array and sort by count
+            return Object.entries(categoryCounts)
+                .map(([name, count]) => ({ name, count }))
+                .sort((a, b) => b.count - a.count);
+        } catch (error) {
+            console.error('Error fetching course categories with counts:', error);
+            return [];
+        }
     }
 };

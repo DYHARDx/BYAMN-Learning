@@ -6,6 +6,8 @@ let currentFilter = 'all';
 let currentSearchTerm = '';
 let currentSort = 'newest'; // newest, oldest, enrollmentAsc, enrollmentDesc
 let categoryMap = {}; // Map to store category ID to name mappings
+let searchDebounceTimer = null;
+let searchHistory = [];
 
 // Intersection Observer for lazy loading images
 const imageObserver = new IntersectionObserver((entries, observer) => {
@@ -64,16 +66,71 @@ document.addEventListener('DOMContentLoaded', function() {
     const categoryFilterContainer = document.getElementById('category-filters');
     const searchInput = document.getElementById('course-search');
     const sortSelect = document.getElementById('sort-options');
+    const recommendationsSection = document.getElementById('recommendations-section');
+    const recommendationsContainer = document.getElementById('recommendations-container');
+    // New elements for enhanced search
+    const searchSuggestions = document.getElementById('search-suggestions');
+    const clearSearchBtn = document.getElementById('clear-search');
+    const difficultyFilter = document.getElementById('difficulty-filter');
+    const durationFilter = document.getElementById('duration-filter');
+    const ratingFilter = document.getElementById('rating-filter');
+    const languageFilter = document.getElementById('language-filter');
+    const resetFiltersBtn = document.getElementById('reset-filters');
+    const activeFiltersContainer = document.getElementById('active-filters');
 
     // Load courses and categories when page loads
     loadCategoriesAndCourses();
 
-    // Add search event listener
+    // Add search event listener with enhanced functionality
     if (searchInput) {
-        searchInput.addEventListener('input', utils.debounce(function(e) {
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchDebounceTimer);
             currentSearchTerm = e.target.value.toLowerCase();
-            applyFilters();
-        }, 300));
+            
+            // Show clear button when there's text
+            if (clearSearchBtn) {
+                clearSearchBtn.style.display = currentSearchTerm ? 'block' : 'none';
+            }
+            
+            // Debounce search to improve performance
+            searchDebounceTimer = setTimeout(() => {
+                if (currentSearchTerm.length > 1) {
+                    // Show search suggestions
+                    showSearchSuggestions(currentSearchTerm);
+                } else if (searchSuggestions) {
+                    searchSuggestions.innerHTML = '';
+                    searchSuggestions.style.display = 'none';
+                }
+                applyFilters();
+            }, 300);
+        });
+        
+        // Handle search submission
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addToSearchHistory(currentSearchTerm);
+                applyFilters();
+                if (searchSuggestions) {
+                    searchSuggestions.style.display = 'none';
+                }
+            }
+        });
+    }
+    
+    // Clear search functionality
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            if (searchInput) {
+                searchInput.value = '';
+                currentSearchTerm = '';
+                clearSearchBtn.style.display = 'none';
+                if (searchSuggestions) {
+                    searchSuggestions.innerHTML = '';
+                    searchSuggestions.style.display = 'none';
+                }
+                applyFilters();
+            }
+        });
     }
 
     // Add sort event listener
@@ -81,6 +138,30 @@ document.addEventListener('DOMContentLoaded', function() {
         sortSelect.addEventListener('change', function(e) {
             currentSort = e.target.value;
             applyFilters();
+        });
+    }
+
+    // Add filter event listeners
+    if (difficultyFilter) {
+        difficultyFilter.addEventListener('change', applyFilters);
+    }
+    
+    if (durationFilter) {
+        durationFilter.addEventListener('change', applyFilters);
+    }
+    
+    if (ratingFilter) {
+        ratingFilter.addEventListener('change', applyFilters);
+    }
+    
+    if (languageFilter) {
+        languageFilter.addEventListener('change', applyFilters);
+    }
+    
+    // Reset filters button
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', function() {
+            resetAllFilters();
         });
     }
 
@@ -120,6 +201,21 @@ document.addEventListener('DOMContentLoaded', function() {
             // Store all courses for filtering
             allCourses = courses;
 
+            // Check if user is logged in to show personalized recommendations
+            const user = firebaseServices.auth.currentUser;
+            if (user) {
+                // Load personalized recommendations
+                loadRecommendations(user.uid, courses, categories);
+            } else {
+                // Hide recommendations section for non-logged in users
+                if (recommendationsSection) {
+                    recommendationsSection.style.display = 'none';
+                }
+            }
+
+            // Populate language filter with available languages
+            populateLanguageFilter();
+
             // Render category filters
             renderCategoryFilters(categories);
 
@@ -150,6 +246,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             `;
+        }
+    }
+
+    // Populate language filter with available languages
+    async function populateLanguageFilter() {
+        const languageFilter = document.getElementById('language-filter');
+        if (!languageFilter) return;
+
+        try {
+            const languages = await firebaseServices.getAvailableLanguages();
+            
+            // Clear existing options except the first one
+            languageFilter.innerHTML = '<option value="all">All Languages</option>';
+            
+            // Add available languages
+            languages.forEach(language => {
+                const option = document.createElement('option');
+                option.value = language;
+                option.textContent = language;
+                languageFilter.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error populating language filter:', error);
         }
     }
 
@@ -209,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Apply both category filter and search term
+    // Enhanced filter application with advanced options
     function applyFilters() {
         console.log('Applying filters - Category:', currentFilter, 'Search:', currentSearchTerm, 'Sort:', currentSort);
         console.log('All courses:', allCourses);
@@ -239,19 +358,55 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Apply search filter
+        // Apply search filter with enhanced matching
         if (currentSearchTerm) {
             filteredCourses = filteredCourses.filter(course => {
-                const titleMatch = course.title && course.title.toLowerCase().includes(currentSearchTerm);
-                const descriptionMatch = course.description && course.description.toLowerCase().includes(currentSearchTerm);
-                const categoryMatch = (course.category && course.category.toLowerCase().includes(currentSearchTerm)) ||
-                                    (categoryMap[course.category] && categoryMap[course.category].toLowerCase().includes(currentSearchTerm));
-                const instructorMatch = course.instructor && course.instructor.toLowerCase().includes(currentSearchTerm);
-                const languageMatch = course.language && course.language.toLowerCase().includes(currentSearchTerm);
-
-                const matches = titleMatch || descriptionMatch || categoryMatch || instructorMatch || languageMatch;
-                console.log(`Course "${course.title}" matches search "${currentSearchTerm}": ${matches}`);
-                return matches;
+                return smartSearchMatch(course, currentSearchTerm);
+            });
+        }
+        
+        // Apply difficulty filter
+        const difficultyValue = difficultyFilter ? difficultyFilter.value : '';
+        if (difficultyValue && difficultyValue !== 'all') {
+            filteredCourses = filteredCourses.filter(course => {
+                return course.difficulty && course.difficulty.toLowerCase() === difficultyValue.toLowerCase();
+            });
+        }
+        
+        // Apply duration filter
+        const durationValue = durationFilter ? durationFilter.value : '';
+        if (durationValue && durationValue !== 'all') {
+            filteredCourses = filteredCourses.filter(course => {
+                if (!course.lessons || !Array.isArray(course.lessons)) return false;
+                
+                const totalDuration = course.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+                
+                switch (durationValue) {
+                    case 'short':
+                        return totalDuration <= 3600; // <= 1 hour
+                    case 'medium':
+                        return totalDuration > 3600 && totalDuration <= 10800; // 1-3 hours
+                    case 'long':
+                        return totalDuration > 10800; // > 3 hours
+                    default:
+                        return true;
+                }
+            });
+        }
+        
+        // Apply rating filter
+        const ratingValue = ratingFilter ? parseFloat(ratingFilter.value) : 0;
+        if (ratingValue > 0) {
+            filteredCourses = filteredCourses.filter(course => {
+                return course.rating && course.rating >= ratingValue;
+            });
+        }
+        
+        // Apply language filter
+        const languageValue = languageFilter ? languageFilter.value : '';
+        if (languageValue && languageValue !== 'all') {
+            filteredCourses = filteredCourses.filter(course => {
+                return course.language && course.language.toLowerCase() === languageValue.toLowerCase();
             });
         }
 
@@ -260,6 +415,279 @@ document.addEventListener('DOMContentLoaded', function() {
 
         console.log('Filtered and sorted courses:', filteredCourses);
         renderCourses(filteredCourses);
+        updateActiveFiltersDisplay();
+    }
+    
+    // Smart search matching function
+    function smartSearchMatch(course, searchTerm) {
+        // Split search term into words for better matching
+        const searchWords = searchTerm.toLowerCase().split(/\s+/);
+        
+        // Fields to search in
+        const searchableFields = [
+            course.title,
+            course.description,
+            course.category,
+            course.instructor,
+            course.language,
+            course.difficulty
+        ].filter(Boolean).map(field => field.toLowerCase());
+        
+        // Check for exact phrase match
+        const phraseMatch = searchableFields.some(field => 
+            field.includes(searchTerm.toLowerCase())
+        );
+        
+        if (phraseMatch) return true;
+        
+        // Check for word matches
+        return searchWords.every(word => 
+            searchableFields.some(field => field.includes(word))
+        );
+    }
+    
+    // Show search suggestions
+    function showSearchSuggestions(term) {
+        if (!searchSuggestions) return;
+        
+        // Get matching courses for suggestions
+        const matchingCourses = allCourses.filter(course => 
+            course.title && course.title.toLowerCase().includes(term)
+        ).slice(0, 5); // Limit to 5 suggestions
+        
+        if (matchingCourses.length === 0) {
+            searchSuggestions.innerHTML = '';
+            searchSuggestions.style.display = 'none';
+            return;
+        }
+        
+        let suggestionsHTML = '';
+        matchingCourses.forEach(course => {
+            suggestionsHTML += `
+                <div class="suggestion-item px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center" data-value="${course.title}">
+                    <svg class="h-4 w-4 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span>${course.title}</span>
+                </div>
+            `;
+        });
+        
+        searchSuggestions.innerHTML = suggestionsHTML;
+        searchSuggestions.style.display = 'block';
+        
+        // Add click event listeners to suggestions
+        document.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                if (searchInput) {
+                    searchInput.value = value;
+                    currentSearchTerm = value.toLowerCase();
+                    addToSearchHistory(currentSearchTerm);
+                    applyFilters();
+                    searchSuggestions.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Add to search history
+    function addToSearchHistory(term) {
+        if (!term) return;
+        
+        // Remove if already exists
+        searchHistory = searchHistory.filter(item => item !== term);
+        
+        // Add to beginning of array
+        searchHistory.unshift(term);
+        
+        // Keep only last 10 items
+        if (searchHistory.length > 10) {
+            searchHistory = searchHistory.slice(0, 10);
+        }
+        
+        // Save to localStorage
+        try {
+            localStorage.setItem('courseSearchHistory', JSON.stringify(searchHistory));
+        } catch (e) {
+            console.warn('Could not save search history to localStorage');
+        }
+    }
+    
+    // Reset all filters
+    function resetAllFilters() {
+        // Reset category filter
+        currentFilter = 'all';
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            if (btn.getAttribute('data-category') === 'all') {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        
+        // Reset search
+        if (searchInput) {
+            searchInput.value = '';
+            currentSearchTerm = '';
+        }
+        
+        if (clearSearchBtn) {
+            clearSearchBtn.style.display = 'none';
+        }
+        
+        if (searchSuggestions) {
+            searchSuggestions.innerHTML = '';
+            searchSuggestions.style.display = 'none';
+        }
+        
+        // Reset advanced filters
+        if (difficultyFilter) difficultyFilter.value = 'all';
+        if (durationFilter) durationFilter.value = 'all';
+        if (ratingFilter) ratingFilter.value = '0';
+        if (languageFilter) languageFilter.value = 'all';
+        
+        // Apply filters
+        applyFilters();
+    }
+    
+    // Update active filters display
+    function updateActiveFiltersDisplay() {
+        if (!activeFiltersContainer) return;
+        
+        const activeFilters = [];
+        
+        // Category filter
+        if (currentFilter !== 'all') {
+            activeFilters.push({
+                type: 'Category',
+                value: currentFilter,
+                element: 'category'
+            });
+        }
+        
+        // Difficulty filter
+        const difficultyValue = difficultyFilter ? difficultyFilter.value : '';
+        if (difficultyValue && difficultyValue !== 'all') {
+            activeFilters.push({
+                type: 'Difficulty',
+                value: difficultyValue,
+                element: 'difficulty'
+            });
+        }
+        
+        // Duration filter
+        const durationValue = durationFilter ? durationFilter.value : '';
+        if (durationValue && durationValue !== 'all') {
+            let durationLabel = '';
+            switch (durationValue) {
+                case 'short': durationLabel = 'Short (< 1 hour)'; break;
+                case 'medium': durationLabel = 'Medium (1-3 hours)'; break;
+                case 'long': durationLabel = 'Long (> 3 hours)'; break;
+                default: durationLabel = durationValue;
+            }
+            activeFilters.push({
+                type: 'Duration',
+                value: durationLabel,
+                element: 'duration'
+            });
+        }
+        
+        // Rating filter
+        const ratingValue = ratingFilter ? parseFloat(ratingFilter.value) : 0;
+        if (ratingValue > 0) {
+            activeFilters.push({
+                type: 'Rating',
+                value: `${ratingValue}+ stars`,
+                element: 'rating'
+            });
+        }
+        
+        // Language filter
+        const languageValue = languageFilter ? languageFilter.value : '';
+        if (languageValue && languageValue !== 'all') {
+            activeFilters.push({
+                type: 'Language',
+                value: languageValue,
+                element: 'language'
+            });
+        }
+        
+        if (activeFilters.length === 0) {
+            activeFiltersContainer.innerHTML = '';
+            activeFiltersContainer.style.display = 'none';
+            return;
+        }
+        
+        let filtersHTML = '<div class="flex flex-wrap items-center gap-2">';
+        filtersHTML += '<span class="text-sm text-gray-600 font-medium">Active filters:</span>';
+        
+        activeFilters.forEach(filter => {
+            filtersHTML += `
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                    ${filter.type}: ${filter.value}
+                    <button type="button" class="ml-1.5 flex-shrink-0 h-4 w-4 rounded-full inline-flex items-center justify-center text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:outline-none focus:bg-indigo-500 focus:text-white remove-filter" data-element="${filter.element}">
+                        <span class="sr-only">Remove filter</span>
+                        <svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
+                            <path stroke-linecap="round" stroke-width="1.5" d="M1 1l6 6m0-6L1 7" />
+                        </svg>
+                    </button>
+                </span>
+            `;
+        });
+        
+        filtersHTML += `
+            <button id="clear-all-filters" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                Clear all
+            </button>
+        `;
+        
+        filtersHTML += '</div>';
+        activeFiltersContainer.innerHTML = filtersHTML;
+        activeFiltersContainer.style.display = 'block';
+        
+        // Add event listeners to remove filter buttons
+        document.querySelectorAll('.remove-filter').forEach(button => {
+            button.addEventListener('click', function() {
+                const element = this.getAttribute('data-element');
+                removeFilter(element);
+            });
+        });
+        
+        // Add event listener to clear all filters button
+        const clearAllBtn = document.getElementById('clear-all-filters');
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', resetAllFilters);
+        }
+    }
+    
+    // Remove specific filter
+    function removeFilter(element) {
+        switch (element) {
+            case 'category':
+                currentFilter = 'all';
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    if (btn.getAttribute('data-category') === 'all') {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                break;
+            case 'difficulty':
+                if (difficultyFilter) difficultyFilter.value = 'all';
+                break;
+            case 'duration':
+                if (durationFilter) durationFilter.value = 'all';
+                break;
+            case 'rating':
+                if (ratingFilter) ratingFilter.value = '0';
+                break;
+            case 'language':
+                if (languageFilter) languageFilter.value = 'all';
+                break;
+        }
+        applyFilters();
     }
 
     // Sort courses based on selected criteria
@@ -298,6 +726,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     const countA = a.enrollmentCount || 0;
                     const countB = b.enrollmentCount || 0;
                     return countB - countA;
+                });
+                
+            case 'ratingDesc':
+                // Sort by rating (descending)
+                return coursesCopy.sort((a, b) => {
+                    const ratingA = a.rating || 0;
+                    const ratingB = b.rating || 0;
+                    return ratingB - ratingA;
+                });
+                
+            case 'durationAsc':
+                // Sort by duration (ascending)
+                return coursesCopy.sort((a, b) => {
+                    const durationA = a.lessons ? a.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0) : 0;
+                    const durationB = b.lessons ? b.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0) : 0;
+                    return durationA - durationB;
+                });
+                
+            case 'durationDesc':
+                // Sort by duration (descending)
+                return coursesCopy.sort((a, b) => {
+                    const durationA = a.lessons ? a.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0) : 0;
+                    const durationB = b.lessons ? b.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0) : 0;
+                    return durationB - durationA;
                 });
 
             default:
