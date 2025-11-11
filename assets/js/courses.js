@@ -4,8 +4,12 @@
 let allCourses = [];
 let currentFilter = 'all';
 let currentSearchTerm = '';
-let currentSort = 'newest'; // newest, oldest, enrollmentAsc, enrollmentDesc
+let currentSort = 'newest'; // newest, oldest, enrollmentAsc, enrollmentDesc, ratingDesc, priceAsc, priceDesc
 let categoryMap = {}; // Map to store category ID to name mappings
+let difficultyFilter = 'all'; // all, beginner, intermediate, advanced
+let durationFilter = 'all'; // all, short, medium, long
+let instructorFilter = 'all'; // all, specific instructors
+let priceFilter = 'all'; // all, free, paid
 
 // Intersection Observer for lazy loading images
 const imageObserver = new IntersectionObserver((entries, observer) => {
@@ -58,12 +62,146 @@ function getNormalizedDate(dateValue) {
     return new Date(0);
 }
 
+// Utility function to get course duration category
+function getDurationCategory(duration) {
+    if (!duration) return 'short';
+    
+    // Convert duration to minutes if it's in HH:MM format
+    if (typeof duration === 'string' && duration.includes(':')) {
+        const parts = duration.split(':');
+        const hours = parseInt(parts[0]) || 0;
+        const minutes = parseInt(parts[1]) || 0;
+        const totalMinutes = hours * 60 + minutes;
+        if (totalMinutes <= 120) return 'short';
+        if (totalMinutes <= 360) return 'medium';
+        return 'long';
+    }
+    
+    // If duration is in minutes
+    if (typeof duration === 'number') {
+        if (duration <= 120) return 'short';
+        if (duration <= 360) return 'medium';
+        return 'long';
+    }
+    
+    return 'short';
+}
+
+// Utility function to filter courses
+function filterCourses(courses, searchTerm, category, difficulty, duration, instructor, price) {
+    return courses.filter(course => {
+        // Search term filter
+        if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            const titleMatch = course.title && course.title.toLowerCase().includes(searchLower);
+            const descriptionMatch = course.description && course.description.toLowerCase().includes(searchLower);
+            const instructorMatch = course.instructor && course.instructor.toLowerCase().includes(searchLower);
+            const categoryMatch = categoryMap[course.category] && categoryMap[course.category].toLowerCase().includes(searchLower);
+            const languageMatch = course.language && course.language.toLowerCase().includes(searchLower);
+            
+            if (!titleMatch && !descriptionMatch && !instructorMatch && !categoryMatch && !languageMatch) {
+                return false;
+            }
+        }
+        
+        // Category filter
+        if (category !== 'all' && categoryMap[course.category] !== category) {
+            return false;
+        }
+        
+        // Difficulty filter
+        if (difficulty !== 'all' && course.difficulty && course.difficulty.toLowerCase() !== difficulty) {
+            return false;
+        }
+        
+        // Duration filter
+        if (duration !== 'all') {
+            const courseDuration = getDurationCategory(course.duration);
+            if (courseDuration !== duration) {
+                return false;
+            }
+        }
+        
+        // Instructor filter
+        if (instructor !== 'all' && course.instructor !== instructor) {
+            return false;
+        }
+        
+        // Price filter
+        if (price !== 'all') {
+            const isFree = !course.price || course.price === 0;
+            if (price === 'free' && !isFree) {
+                return false;
+            }
+            if (price === 'paid' && isFree) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
+}
+
+// Utility function to sort courses
+function sortCourses(courses, sortOption) {
+    const sortedCourses = [...courses];
+    
+    switch (sortOption) {
+        case 'newest':
+            sortedCourses.sort((a, b) => {
+                const dateA = getNormalizedDate(a.createdAt || a.created || a.date || a.timestamp);
+                const dateB = getNormalizedDate(b.createdAt || b.created || b.date || b.timestamp);
+                return dateB - dateA;
+            });
+            break;
+        case 'oldest':
+            sortedCourses.sort((a, b) => {
+                const dateA = getNormalizedDate(a.createdAt || a.created || a.date || a.timestamp);
+                const dateB = getNormalizedDate(b.createdAt || b.created || b.date || b.timestamp);
+                return dateA - dateB;
+            });
+            break;
+        case 'enrollmentAsc':
+            sortedCourses.sort((a, b) => (a.enrollmentCount || 0) - (b.enrollmentCount || 0));
+            break;
+        case 'enrollmentDesc':
+            sortedCourses.sort((a, b) => (b.enrollmentCount || 0) - (a.enrollmentCount || 0));
+            break;
+        case 'ratingDesc':
+            sortedCourses.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+            break;
+        case 'priceAsc':
+            sortedCourses.sort((a, b) => (a.price || 0) - (b.price || 0));
+            break;
+        case 'priceDesc':
+            sortedCourses.sort((a, b) => (b.price || 0) - (a.price || 0));
+            break;
+        default:
+            // Default to newest
+            sortedCourses.sort((a, b) => {
+                const dateA = getNormalizedDate(a.createdAt || a.created || a.date || a.timestamp);
+                const dateB = getNormalizedDate(b.createdAt || b.created || b.date || b.timestamp);
+                return dateB - dateA;
+            });
+    }
+    
+    return sortedCourses;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Elements
     const coursesContainer = document.getElementById('courses-container');
     const categoryFilterContainer = document.getElementById('category-filters');
     const searchInput = document.getElementById('course-search');
     const sortSelect = document.getElementById('sort-options');
+    const toggleFiltersBtn = document.getElementById('toggle-filters');
+    const advancedFiltersPanel = document.getElementById('advanced-filters');
+    const difficultyFilterSelect = document.getElementById('difficulty-filter');
+    const durationFilterSelect = document.getElementById('duration-filter');
+    const instructorFilterSelect = document.getElementById('instructor-filter');
+    const priceFilterSelect = document.getElementById('price-filter');
+    const clearFiltersBtn = document.getElementById('clear-filters');
+    const resultsCount = document.getElementById('results-count');
 
     // Load courses and categories when page loads
     loadCategoriesAndCourses();
@@ -82,6 +220,113 @@ document.addEventListener('DOMContentLoaded', function() {
             currentSort = e.target.value;
             applyFilters();
         });
+    }
+
+    // Add toggle filters event listener
+    if (toggleFiltersBtn) {
+        toggleFiltersBtn.addEventListener('click', function() {
+            advancedFiltersPanel.classList.toggle('hidden');
+            const isHidden = advancedFiltersPanel.classList.contains('hidden');
+            toggleFiltersBtn.innerHTML = isHidden ? 
+                `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                </svg>
+                Advanced Filters` :
+                `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Hide Filters`;
+        });
+    }
+
+    // Add difficulty filter event listener
+    if (difficultyFilterSelect) {
+        difficultyFilterSelect.addEventListener('change', function(e) {
+            difficultyFilter = e.target.value;
+            applyFilters();
+        });
+    }
+
+    // Add duration filter event listener
+    if (durationFilterSelect) {
+        durationFilterSelect.addEventListener('change', function(e) {
+            durationFilter = e.target.value;
+            applyFilters();
+        });
+    }
+
+    // Add instructor filter event listener
+    if (instructorFilterSelect) {
+        instructorFilterSelect.addEventListener('change', function(e) {
+            instructorFilter = e.target.value;
+            applyFilters();
+        });
+    }
+
+    // Add price filter event listener
+    if (priceFilterSelect) {
+        priceFilterSelect.addEventListener('change', function(e) {
+            priceFilter = e.target.value;
+            applyFilters();
+        });
+    }
+
+    // Add clear filters event listener
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', function() {
+            // Reset all filters
+            currentSearchTerm = '';
+            currentFilter = 'all';
+            difficultyFilter = 'all';
+            durationFilter = 'all';
+            instructorFilter = 'all';
+            priceFilter = 'all';
+            currentSort = 'newest';
+            
+            // Reset UI elements
+            if (searchInput) searchInput.value = '';
+            if (sortSelect) sortSelect.value = 'newest';
+            if (difficultyFilterSelect) difficultyFilterSelect.value = 'all';
+            if (durationFilterSelect) durationFilterSelect.value = 'all';
+            if (instructorFilterSelect) instructorFilterSelect.value = 'all';
+            if (priceFilterSelect) priceFilterSelect.value = 'all';
+            
+            // Update active button styling
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.getAttribute('data-category') === 'all') {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            applyFilters();
+        });
+    }
+
+    // Apply all filters
+    function applyFilters() {
+        // Filter courses
+        let filteredCourses = filterCourses(
+            allCourses, 
+            currentSearchTerm, 
+            currentFilter, 
+            difficultyFilter, 
+            durationFilter, 
+            instructorFilter,
+            priceFilter
+        );
+        
+        // Sort courses
+        filteredCourses = sortCourses(filteredCourses, currentSort);
+        
+        // Render courses
+        renderCourses(filteredCourses);
+        
+        // Update results count
+        if (resultsCount) {
+            resultsCount.textContent = `${filteredCourses.length} course${filteredCourses.length !== 1 ? 's' : ''} found`;
+        }
     }
 
     // Load categories and courses from Firebase
@@ -122,7 +367,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Render category filters
             renderCategoryFilters(categories);
-
+            
+            // Render instructor filters
+            renderInstructorFilters(courses);
+            
             // Render all courses by default
             renderCourses(courses);
 
@@ -130,6 +378,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const allCoursesButton = document.querySelector('.filter-btn[data-category="all"]');
             if (allCoursesButton) {
                 allCoursesButton.classList.add('active');
+            }
+            
+            // Update results count
+            if (resultsCount) {
+                resultsCount.textContent = `${courses.length} course${courses.length !== 1 ? 's' : ''} found`;
             }
         } catch (error) {
             console.error('Error loading categories and courses:', error);
@@ -208,119 +461,80 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
-    // Apply both category filter and search term
-    function applyFilters() {
-        console.log('Applying filters - Category:', currentFilter, 'Search:', currentSearchTerm, 'Sort:', currentSort);
-        console.log('All courses:', allCourses);
-
-        let filteredCourses = [...allCourses]; // Create a copy to avoid modifying original array
-
-        // Apply category filter
-        if (currentFilter !== 'all') {
-            filteredCourses = filteredCourses.filter(course => {
-                // Check if course has a category and if it matches (case-insensitive)
-                const courseCategory = course.category ? course.category.trim() : '';
-
-                // Normalize both values for comparison
-                const normalizedCourseCategory = (categoryMap[courseCategory] || courseCategory).toLowerCase();
-                const normalizedFilterCategory = currentFilter.toLowerCase();
-
-                // Check for exact match or partial matches for common categories
-                const matches = normalizedCourseCategory === normalizedFilterCategory ||
-                              (normalizedFilterCategory === 'mobile development' && normalizedCourseCategory.includes('mobile')) ||
-                              (normalizedFilterCategory === 'web development' && normalizedCourseCategory.includes('web')) ||
-                              (normalizedFilterCategory === 'data science' && (normalizedCourseCategory.includes('data') || normalizedCourseCategory.includes('science'))) ||
-                              (normalizedFilterCategory === 'business' && normalizedCourseCategory.includes('business')) ||
-                              (normalizedFilterCategory === 'marketing' && normalizedCourseCategory.includes('marketing'));
-
-                console.log(`Course "${course.title}" category "${normalizedCourseCategory}" matches "${normalizedFilterCategory}": ${matches}`);
-                return matches;
-            });
-        }
-
-        // Apply search filter
-        if (currentSearchTerm) {
-            filteredCourses = filteredCourses.filter(course => {
-                const titleMatch = course.title && course.title.toLowerCase().includes(currentSearchTerm);
-                const descriptionMatch = course.description && course.description.toLowerCase().includes(currentSearchTerm);
-                const categoryMatch = (course.category && course.category.toLowerCase().includes(currentSearchTerm)) ||
-                                    (categoryMap[course.category] && categoryMap[course.category].toLowerCase().includes(currentSearchTerm));
-                const instructorMatch = course.instructor && course.instructor.toLowerCase().includes(currentSearchTerm);
-                const languageMatch = course.language && course.language.toLowerCase().includes(currentSearchTerm);
-
-                const matches = titleMatch || descriptionMatch || categoryMatch || instructorMatch || languageMatch;
-                console.log(`Course "${course.title}" matches search "${currentSearchTerm}": ${matches}`);
-                return matches;
-            });
-        }
-
-        // Apply sorting
-        filteredCourses = sortCourses(filteredCourses, currentSort);
-
-        console.log('Filtered and sorted courses:', filteredCourses);
-        renderCourses(filteredCourses);
-    }
-
-    // Sort courses based on selected criteria
-    function sortCourses(courses, sortType) {
-        // Create a copy of the array to avoid modifying the original
-        const coursesCopy = [...courses];
-
-        switch(sortType) {
-            case 'newest':
-                // Sort by creation date (newest first)
-                return coursesCopy.sort((a, b) => {
-                    const dateA = getNormalizedDate(a.createdAt || a.created || a.date || a.timestamp);
-                    const dateB = getNormalizedDate(b.createdAt || b.created || b.date || b.timestamp);
-                    return dateB - dateA;
-                });
-
-            case 'oldest':
-                // Sort by creation date (oldest first)
-                return coursesCopy.sort((a, b) => {
-                    const dateA = getNormalizedDate(a.createdAt || a.created || a.date || a.timestamp);
-                    const dateB = getNormalizedDate(b.createdAt || b.created || b.date || b.timestamp);
-                    return dateA - dateB;
-                });
-
-            case 'enrollmentAsc':
-                // Sort by enrollment count (ascending)
-                return coursesCopy.sort((a, b) => {
-                    const countA = a.enrollmentCount || 0;
-                    const countB = b.enrollmentCount || 0;
-                    return countA - countB;
-                });
-
-            case 'enrollmentDesc':
-                // Sort by enrollment count (descending)
-                return coursesCopy.sort((a, b) => {
-                    const countA = a.enrollmentCount || 0;
-                    const countB = b.enrollmentCount || 0;
-                    return countB - countA;
-                });
-
-            default:
-                return coursesCopy;
-        }
+    
+    // Render instructor filters
+    function renderInstructorFilters(courses) {
+        if (!instructorFilterSelect) return;
+        
+        // Get unique instructors
+        const instructors = [...new Set(courses.map(course => course.instructor).filter(Boolean))];
+        
+        // Clear existing options except the first one
+        instructorFilterSelect.innerHTML = '<option value="all">All Instructors</option>';
+        
+        // Add instructor options
+        instructors.forEach(instructor => {
+            const option = document.createElement('option');
+            option.value = instructor;
+            option.textContent = instructor;
+            instructorFilterSelect.appendChild(option);
+        });
     }
 
     // Render courses
     function renderCourses(courses) {
         if (!coursesContainer) return;
 
-        console.log('Rendering courses:', courses);
-
-        if (!courses || courses.length === 0) {
+        if (courses.length === 0) {
             coursesContainer.innerHTML = `
                 <div class="col-span-full text-center py-20">
                     <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <h3 class="mt-6 text-2xl font-bold text-gray-900">No courses found</h3>
-                    <p class="mt-3 text-gray-600 max-w-md mx-auto">Try adjusting your search or filter criteria to find what you're looking for.</p>
+                    <p class="mt-3 text-gray-600 max-w-md mx-auto">Try adjusting your search or filter criteria</p>
+                    <div class="mt-8">
+                        <button id="clear-filters-btn" class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition duration-300 shadow-md hover:shadow-lg">
+                            Clear Filters
+                        </button>
+                    </div>
                 </div>
             `;
+            
+            // Add event listener to clear filters button
+            const clearFiltersBtn = document.getElementById('clear-filters-btn');
+            if (clearFiltersBtn) {
+                clearFiltersBtn.addEventListener('click', function() {
+                    // Reset all filters
+                    currentSearchTerm = '';
+                    currentFilter = 'all';
+                    difficultyFilter = 'all';
+                    durationFilter = 'all';
+                    instructorFilter = 'all';
+                    priceFilter = 'all';
+                    currentSort = 'newest';
+                    
+                    // Reset UI elements
+                    if (searchInput) searchInput.value = '';
+                    if (sortSelect) sortSelect.value = 'newest';
+                    if (difficultyFilterSelect) difficultyFilterSelect.value = 'all';
+                    if (durationFilterSelect) durationFilterSelect.value = 'all';
+                    if (instructorFilterSelect) instructorFilterSelect.value = 'all';
+                    if (priceFilterSelect) priceFilterSelect.value = 'all';
+                    
+                    // Update active button styling
+                    document.querySelectorAll('.filter-btn').forEach(btn => {
+                        if (btn.getAttribute('data-category') === 'all') {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+                    
+                    applyFilters();
+                });
+            }
+            
             return;
         }
 
@@ -329,25 +543,22 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Processing courses for display:', courses);
         courses.forEach(course => {
             console.log('Processing course:', course);
-            // Calculate average duration of lessons
-            let totalDuration = 0;
-            let lessonCount = 0;
-            if (course.lessons) {
-                Object.values(course.lessons).forEach(lesson => {
-                    totalDuration += lesson.duration || 0;
-                    lessonCount++;
-                });
+            
+            // Map category ID to name if it's an ID, otherwise use as is
+            let categoryName = course.category || 'General';
+            if (categoryMap && categoryMap[course.category]) {
+                categoryName = categoryMap[course.category];
             }
-
-            // Get category name, mapping from ID if necessary
-            let categoryName = 'General';
-            if (course.category) {
-                // Check if it's a category ID that needs to be mapped to a name
-                categoryName = categoryMap[course.category] || course.category;
-            }
-
+            
+            // Get duration category
+            const durationCategory = getDurationCategory(course.duration);
+            let durationText = course.duration || 'N/A';
+            if (durationCategory === 'short') durationText += ' (Short)';
+            else if (durationCategory === 'medium') durationText += ' (Medium)';
+            else if (durationCategory === 'long') durationText += ' (Long)';
+            
             // Determine badge color based on category
-            let badgeClass = 'badge-primary';
+            let badgeClass = 'bg-gray-100 text-gray-800';
             if (categoryName) {
                 const category = categoryName.toLowerCase();
                 if (category.includes('web')) {
@@ -360,11 +571,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     badgeClass = 'bg-amber-100 text-amber-800';
                 } else if (category.includes('business')) {
                     badgeClass = 'bg-indigo-100 text-indigo-800';
-                } else {
-                    badgeClass = 'bg-gray-100 text-gray-800';
                 }
             }
-
+            
+            // Format price
+            let priceText = 'Free';
+            if (course.price && course.price > 0) {
+                priceText = `$${course.price.toFixed(2)}`;
+            }
+            
             coursesHTML += `
                 <div class="course-card">
                     <div class="course-image-container">
@@ -386,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                                 </svg>
-                                <span class="ml-1 text-gray-700 font-semibold text-sm">4.5</span>
+                                <span class="ml-1 text-gray-700 font-semibold text-sm">${course.rating || '4.5'}</span>
                             </div>
                         </div>
                         <h3 class="course-card-title">${course.title}</h3>
@@ -394,28 +609,33 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${course.description || 'No description available for this course.'}
                         </p>
                         <div class="course-card-meta">
-                            <div class="flex items-center text-gray-600 text-sm">
-                                <svg class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span class="font-medium">${formatDuration(Math.ceil(totalDuration)) || '0m 0s'}</span>
-                                ${course.language ? `<span class="ml-3 badge bg-gray-100 text-gray-800">${course.language}</span>` : ''}
-                                ${course.enrollmentCount ? `<span class="ml-3 badge bg-green-100 text-green-800">${course.enrollmentCount} enrolled</span>` : ''}
+                            <div class="flex flex-wrap items-center gap-2 text-gray-600 text-sm">
+                                <div class="flex items-center">
+                                    <svg class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span class="font-medium">${durationText}</span>
+                                </div>
+                                ${course.language ? `<span class="badge bg-gray-100 text-gray-800">${course.language}</span>` : ''}
+                                ${course.enrollmentCount ? `<span class="badge bg-green-100 text-green-800">${course.enrollmentCount} enrolled</span>` : ''}
+                                ${course.difficulty ? `<span class="badge bg-purple-100 text-purple-800">${course.difficulty}</span>` : ''}
                             </div>
-                            <button class="btn btn-primary enroll-btn" data-course-id="${course.id}">
-                                Enroll Now
-                            </button>
+                            <div class="flex items-center mt-3">
+                                <span class="course-card-price mr-3">${priceText}</span>
+                                <button class="btn btn-primary enroll-btn" data-course-id="${course.id}">
+                                    Enroll Now
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
-
         });
 
         console.log('Generated courses HTML:', coursesHTML);
         coursesContainer.innerHTML = coursesHTML;
         console.log('Courses container updated with', courses.length, 'courses');
-
+        
         // Observe images for lazy loading
         document.querySelectorAll('.lazy-load').forEach(img => {
             imageObserver.observe(img);
@@ -464,21 +684,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = document.querySelector(`.enroll-btn[data-course-id="${courseId}"]`);
             button.textContent = 'Enroll Now';
             button.disabled = false;
-        }
-    }
-
-    // Format duration from seconds to HH:MM:SS or MM:SS format
-    function formatDuration(seconds) {
-        if (!seconds) return '0m 0s';
-
-        const hrs = Math.floor(seconds / 3600);
-        const mins = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-
-        if (hrs > 0) {
-            return `${hrs}h ${mins}m`;
-        } else {
-            return `${mins}m ${secs}s`;
         }
     }
 });
