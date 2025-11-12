@@ -4,10 +4,11 @@
 let allCourses = [];
 let currentFilter = 'all';
 let currentSearchTerm = '';
-let currentSort = 'newest'; // newest, oldest, enrollmentAsc, enrollmentDesc
+let currentSort = 'newest'; // newest, oldest, enrollmentAsc, enrollmentDesc, ratingDesc, priceAsc, priceDesc
 let categoryMap = {}; // Map to store category ID to name mappings
-let searchDebounceTimer = null;
-let searchHistory = [];
+let difficultyFilter = 'all'; // all, beginner, intermediate, advanced
+let durationFilter = 'all'; // all, short, medium, long
+let instructorFilter = 'all'; // all, specific instructors
 
 // Intersection Observer for lazy loading images
 const imageObserver = new IntersectionObserver((entries, observer) => {
@@ -60,23 +61,136 @@ function getNormalizedDate(dateValue) {
     return new Date(0);
 }
 
+// Utility function to get course duration category
+function getDurationCategory(duration) {
+    if (!duration) return 'short';
+    
+    // Convert duration to minutes if it's in HH:MM format
+    if (typeof duration === 'string' && duration.includes(':')) {
+        const parts = duration.split(':');
+        const hours = parseInt(parts[0]) || 0;
+        const minutes = parseInt(parts[1]) || 0;
+        const totalMinutes = hours * 60 + minutes;
+        if (totalMinutes <= 30) return 'short';
+        if (totalMinutes <= 90) return 'medium';
+        return 'long';
+    }
+    
+    // If duration is in minutes
+    if (typeof duration === 'number') {
+        if (duration <= 30) return 'short';
+        if (duration <= 90) return 'medium';
+        return 'long';
+    }
+    
+    return 'short';
+}
+
+// Utility function to filter courses
+function filterCourses(courses, searchTerm, category, difficulty, duration, instructor) {
+    return courses.filter(course => {
+        // Search term filter
+        if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            const titleMatch = course.title && course.title.toLowerCase().includes(searchLower);
+            const descriptionMatch = course.description && course.description.toLowerCase().includes(searchLower);
+            const instructorMatch = course.instructor && course.instructor.toLowerCase().includes(searchLower);
+            const categoryMatch = categoryMap[course.category] && categoryMap[course.category].toLowerCase().includes(searchLower);
+            
+            if (!titleMatch && !descriptionMatch && !instructorMatch && !categoryMatch) {
+                return false;
+            }
+        }
+        
+        // Category filter
+        if (category !== 'all' && categoryMap[course.category] !== category) {
+            return false;
+        }
+        
+        // Difficulty filter
+        if (difficulty !== 'all' && course.difficulty !== difficulty) {
+            return false;
+        }
+        
+        // Duration filter
+        if (duration !== 'all') {
+            const courseDuration = getDurationCategory(course.duration);
+            if (courseDuration !== duration) {
+                return false;
+            }
+        }
+        
+        // Instructor filter
+        if (instructor !== 'all' && course.instructor !== instructor) {
+            return false;
+        }
+        
+        return true;
+    });
+}
+
+// Utility function to sort courses
+function sortCourses(courses, sortOption) {
+    const sortedCourses = [...courses];
+    
+    switch (sortOption) {
+        case 'newest':
+            sortedCourses.sort((a, b) => {
+                const dateA = getNormalizedDate(a.createdAt || a.created || a.date || a.timestamp);
+                const dateB = getNormalizedDate(b.createdAt || b.created || b.date || b.timestamp);
+                return dateB - dateA;
+            });
+            break;
+        case 'oldest':
+            sortedCourses.sort((a, b) => {
+                const dateA = getNormalizedDate(a.createdAt || a.created || a.date || a.timestamp);
+                const dateB = getNormalizedDate(b.createdAt || b.created || b.date || b.timestamp);
+                return dateA - dateB;
+            });
+            break;
+        case 'titleAsc':
+            sortedCourses.sort((a, b) => {
+                const titleA = (a.title || '').toLowerCase();
+                const titleB = (b.title || '').toLowerCase();
+                return titleA.localeCompare(titleB);
+            });
+            break;
+        case 'titleDesc':
+            sortedCourses.sort((a, b) => {
+                const titleA = (a.title || '').toLowerCase();
+                const titleB = (b.title || '').toLowerCase();
+                return titleB.localeCompare(titleA);
+            });
+            break;
+        case 'enrollmentAsc':
+            sortedCourses.sort((a, b) => (a.enrollmentCount || 0) - (b.enrollmentCount || 0));
+            break;
+        case 'enrollmentDesc':
+            sortedCourses.sort((a, b) => (b.enrollmentCount || 0) - (a.enrollmentCount || 0));
+            break;
+        default:
+            // Default to newest
+            sortedCourses.sort((a, b) => {
+                const dateA = getNormalizedDate(a.createdAt || a.created || a.date || a.timestamp);
+                const dateB = getNormalizedDate(b.createdAt || b.created || b.date || b.timestamp);
+                return dateB - dateA;
+            });
+    }
+    
+    return sortedCourses;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Elements
     const coursesContainer = document.getElementById('courses-container');
     const categoryFilterContainer = document.getElementById('category-filters');
     const searchInput = document.getElementById('course-search');
     const sortSelect = document.getElementById('sort-options');
-    const recommendationsSection = document.getElementById('recommendations-section');
-    const recommendationsContainer = document.getElementById('recommendations-container');
-    // New elements for enhanced search
-    const searchSuggestions = document.getElementById('search-suggestions');
-    const clearSearchBtn = document.getElementById('clear-search');
-    const difficultyFilter = document.getElementById('difficulty-filter');
-    const durationFilter = document.getElementById('duration-filter');
-    const ratingFilter = document.getElementById('rating-filter');
-    const languageFilter = document.getElementById('language-filter');
-    const resetFiltersBtn = document.getElementById('reset-filters');
-    const activeFiltersContainer = document.getElementById('active-filters');
+    const difficultyFilterSelect = document.getElementById('difficulty-filter');
+    const durationFilterSelect = document.getElementById('duration-filter');
+    const instructorFilterSelect = document.getElementById('instructor-filter');
+    const clearFiltersBtn = document.getElementById('clear-filters');
+    const resultsCount = document.getElementById('results-count');
 
     // Load courses and categories when page loads
     loadCategoriesAndCourses();
@@ -141,28 +255,83 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Add filter event listeners
-    if (difficultyFilter) {
-        difficultyFilter.addEventListener('change', applyFilters);
-    }
-    
-    if (durationFilter) {
-        durationFilter.addEventListener('change', applyFilters);
-    }
-    
-    if (ratingFilter) {
-        ratingFilter.addEventListener('change', applyFilters);
-    }
-    
-    if (languageFilter) {
-        languageFilter.addEventListener('change', applyFilters);
-    }
-    
-    // Reset filters button
-    if (resetFiltersBtn) {
-        resetFiltersBtn.addEventListener('click', function() {
-            resetAllFilters();
+    // Add difficulty filter event listener
+    if (difficultyFilterSelect) {
+        difficultyFilterSelect.addEventListener('change', function(e) {
+            difficultyFilter = e.target.value;
+            applyFilters();
         });
+    }
+
+    // Add duration filter event listener
+    if (durationFilterSelect) {
+        durationFilterSelect.addEventListener('change', function(e) {
+            durationFilter = e.target.value;
+            applyFilters();
+        });
+    }
+
+    // Add instructor filter event listener
+    if (instructorFilterSelect) {
+        instructorFilterSelect.addEventListener('change', function(e) {
+            instructorFilter = e.target.value;
+            applyFilters();
+        });
+    }
+
+    // Add clear filters event listener
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', function() {
+            // Reset all filters
+            currentSearchTerm = '';
+            currentFilter = 'all';
+            difficultyFilter = 'all';
+            durationFilter = 'all';
+            instructorFilter = 'all';
+            currentSort = 'newest';
+            
+            // Reset UI elements
+            if (searchInput) searchInput.value = '';
+            if (sortSelect) sortSelect.value = 'newest';
+            if (difficultyFilterSelect) difficultyFilterSelect.value = 'all';
+            if (durationFilterSelect) durationFilterSelect.value = 'all';
+            if (instructorFilterSelect) instructorFilterSelect.value = 'all';
+            
+            // Update active button styling
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.getAttribute('data-category') === 'all') {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            applyFilters();
+        });
+    }
+
+    // Apply all filters
+    function applyFilters() {
+        // Filter courses
+        let filteredCourses = filterCourses(
+            allCourses, 
+            currentSearchTerm, 
+            currentFilter, 
+            difficultyFilter, 
+            durationFilter, 
+            instructorFilter
+        );
+        
+        // Sort courses
+        filteredCourses = sortCourses(filteredCourses, currentSort);
+        
+        // Render courses
+        renderCourses(filteredCourses);
+        
+        // Update results count
+        if (resultsCount) {
+            resultsCount.textContent = `${filteredCourses.length} course${filteredCourses.length !== 1 ? 's' : ''} found`;
+        }
     }
 
     // Load categories and courses from Firebase
@@ -218,6 +387,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Render category filters
             renderCategoryFilters(categories);
+            
+            // Render instructor filters
+            renderInstructorFilters(courses);
+            
+            // Render difficulty filters
+            renderDifficultyFilters();
 
             // Render all courses by default
             renderCourses(courses);
@@ -226,6 +401,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const allCoursesButton = document.querySelector('.filter-btn[data-category="all"]');
             if (allCoursesButton) {
                 allCoursesButton.classList.add('active');
+            }
+            
+            // Update results count
+            if (resultsCount) {
+                resultsCount.textContent = `${courses.length} course${courses.length !== 1 ? 's' : ''} found`;
             }
         } catch (error) {
             console.error('Error loading categories and courses:', error);
@@ -327,452 +507,88 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
-    // Enhanced filter application with advanced options
-    function applyFilters() {
-        console.log('Applying filters - Category:', currentFilter, 'Search:', currentSearchTerm, 'Sort:', currentSort);
-        console.log('All courses:', allCourses);
-
-        let filteredCourses = [...allCourses]; // Create a copy to avoid modifying original array
-
-        // Apply category filter
-        if (currentFilter !== 'all') {
-            filteredCourses = filteredCourses.filter(course => {
-                // Check if course has a category and if it matches (case-insensitive)
-                const courseCategory = course.category ? course.category.trim() : '';
-
-                // Normalize both values for comparison
-                const normalizedCourseCategory = (categoryMap[courseCategory] || courseCategory).toLowerCase();
-                const normalizedFilterCategory = currentFilter.toLowerCase();
-
-                // Check for exact match or partial matches for common categories
-                const matches = normalizedCourseCategory === normalizedFilterCategory ||
-                              (normalizedFilterCategory === 'mobile development' && normalizedCourseCategory.includes('mobile')) ||
-                              (normalizedFilterCategory === 'web development' && normalizedCourseCategory.includes('web')) ||
-                              (normalizedFilterCategory === 'data science' && (normalizedCourseCategory.includes('data') || normalizedCourseCategory.includes('science'))) ||
-                              (normalizedFilterCategory === 'business' && normalizedCourseCategory.includes('business')) ||
-                              (normalizedFilterCategory === 'marketing' && normalizedCourseCategory.includes('marketing'));
-
-                console.log(`Course "${course.title}" category "${normalizedCourseCategory}" matches "${normalizedFilterCategory}": ${matches}`);
-                return matches;
-            });
-        }
-
-        // Apply search filter with enhanced matching
-        if (currentSearchTerm) {
-            filteredCourses = filteredCourses.filter(course => {
-                return smartSearchMatch(course, currentSearchTerm);
-            });
-        }
-        
-        // Apply difficulty filter
-        const difficultyValue = difficultyFilter ? difficultyFilter.value : '';
-        if (difficultyValue && difficultyValue !== 'all') {
-            filteredCourses = filteredCourses.filter(course => {
-                return course.difficulty && course.difficulty.toLowerCase() === difficultyValue.toLowerCase();
-            });
-        }
-        
-        // Apply duration filter
-        const durationValue = durationFilter ? durationFilter.value : '';
-        if (durationValue && durationValue !== 'all') {
-            filteredCourses = filteredCourses.filter(course => {
-                if (!course.lessons || !Array.isArray(course.lessons)) return false;
-                
-                const totalDuration = course.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
-                
-                switch (durationValue) {
-                    case 'short':
-                        return totalDuration <= 3600; // <= 1 hour
-                    case 'medium':
-                        return totalDuration > 3600 && totalDuration <= 10800; // 1-3 hours
-                    case 'long':
-                        return totalDuration > 10800; // > 3 hours
-                    default:
-                        return true;
-                }
-            });
-        }
-        
-        // Apply rating filter
-        const ratingValue = ratingFilter ? parseFloat(ratingFilter.value) : 0;
-        if (ratingValue > 0) {
-            filteredCourses = filteredCourses.filter(course => {
-                return course.rating && course.rating >= ratingValue;
-            });
-        }
-        
-        // Apply language filter
-        const languageValue = languageFilter ? languageFilter.value : '';
-        if (languageValue && languageValue !== 'all') {
-            filteredCourses = filteredCourses.filter(course => {
-                return course.language && course.language.toLowerCase() === languageValue.toLowerCase();
-            });
-        }
-
-        // Apply sorting
-        filteredCourses = sortCourses(filteredCourses, currentSort);
-
-        console.log('Filtered and sorted courses:', filteredCourses);
-        renderCourses(filteredCourses);
-        updateActiveFiltersDisplay();
-    }
     
-    // Smart search matching function
-    function smartSearchMatch(course, searchTerm) {
-        // Split search term into words for better matching
-        const searchWords = searchTerm.toLowerCase().split(/\s+/);
+    // Render instructor filters
+    function renderInstructorFilters(courses) {
+        if (!instructorFilterSelect) return;
         
-        // Fields to search in
-        const searchableFields = [
-            course.title,
-            course.description,
-            course.category,
-            course.instructor,
-            course.language,
-            course.difficulty
-        ].filter(Boolean).map(field => field.toLowerCase());
+        // Get unique instructors
+        const instructors = [...new Set(courses.map(course => course.instructor).filter(Boolean))];
         
-        // Check for exact phrase match
-        const phraseMatch = searchableFields.some(field => 
-            field.includes(searchTerm.toLowerCase())
-        );
+        // Clear existing options except the first one
+        instructorFilterSelect.innerHTML = '<option value="all">All Instructors</option>';
         
-        if (phraseMatch) return true;
-        
-        // Check for word matches
-        return searchWords.every(word => 
-            searchableFields.some(field => field.includes(word))
-        );
-    }
-    
-    // Show search suggestions
-    function showSearchSuggestions(term) {
-        if (!searchSuggestions) return;
-        
-        // Get matching courses for suggestions
-        const matchingCourses = allCourses.filter(course => 
-            course.title && course.title.toLowerCase().includes(term)
-        ).slice(0, 5); // Limit to 5 suggestions
-        
-        if (matchingCourses.length === 0) {
-            searchSuggestions.innerHTML = '';
-            searchSuggestions.style.display = 'none';
-            return;
-        }
-        
-        let suggestionsHTML = '';
-        matchingCourses.forEach(course => {
-            suggestionsHTML += `
-                <div class="suggestion-item px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center" data-value="${course.title}">
-                    <svg class="h-4 w-4 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <span>${course.title}</span>
-                </div>
-            `;
-        });
-        
-        searchSuggestions.innerHTML = suggestionsHTML;
-        searchSuggestions.style.display = 'block';
-        
-        // Add click event listeners to suggestions
-        document.querySelectorAll('.suggestion-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const value = this.getAttribute('data-value');
-                if (searchInput) {
-                    searchInput.value = value;
-                    currentSearchTerm = value.toLowerCase();
-                    addToSearchHistory(currentSearchTerm);
-                    applyFilters();
-                    searchSuggestions.style.display = 'none';
-                }
-            });
+        // Add instructor options
+        instructors.forEach(instructor => {
+            const option = document.createElement('option');
+            option.value = instructor;
+            option.textContent = instructor;
+            instructorFilterSelect.appendChild(option);
         });
     }
     
-    // Add to search history
-    function addToSearchHistory(term) {
-        if (!term) return;
+    // Render difficulty filters
+    function renderDifficultyFilters() {
+        // Difficulty filters are static, but we could enhance this in the future
+        // For now, we'll just ensure the select element exists
+        if (!difficultyFilterSelect) return;
         
-        // Remove if already exists
-        searchHistory = searchHistory.filter(item => item !== term);
-        
-        // Add to beginning of array
-        searchHistory.unshift(term);
-        
-        // Keep only last 10 items
-        if (searchHistory.length > 10) {
-            searchHistory = searchHistory.slice(0, 10);
-        }
-        
-        // Save to localStorage
-        try {
-            localStorage.setItem('courseSearchHistory', JSON.stringify(searchHistory));
-        } catch (e) {
-            console.warn('Could not save search history to localStorage');
-        }
-    }
-    
-    // Reset all filters
-    function resetAllFilters() {
-        // Reset category filter
-        currentFilter = 'all';
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            if (btn.getAttribute('data-category') === 'all') {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
-        
-        // Reset search
-        if (searchInput) {
-            searchInput.value = '';
-            currentSearchTerm = '';
-        }
-        
-        if (clearSearchBtn) {
-            clearSearchBtn.style.display = 'none';
-        }
-        
-        if (searchSuggestions) {
-            searchSuggestions.innerHTML = '';
-            searchSuggestions.style.display = 'none';
-        }
-        
-        // Reset advanced filters
-        if (difficultyFilter) difficultyFilter.value = 'all';
-        if (durationFilter) durationFilter.value = 'all';
-        if (ratingFilter) ratingFilter.value = '0';
-        if (languageFilter) languageFilter.value = 'all';
-        
-        // Apply filters
-        applyFilters();
-    }
-    
-    // Update active filters display
-    function updateActiveFiltersDisplay() {
-        if (!activeFiltersContainer) return;
-        
-        const activeFilters = [];
-        
-        // Category filter
-        if (currentFilter !== 'all') {
-            activeFilters.push({
-                type: 'Category',
-                value: currentFilter,
-                element: 'category'
-            });
-        }
-        
-        // Difficulty filter
-        const difficultyValue = difficultyFilter ? difficultyFilter.value : '';
-        if (difficultyValue && difficultyValue !== 'all') {
-            activeFilters.push({
-                type: 'Difficulty',
-                value: difficultyValue,
-                element: 'difficulty'
-            });
-        }
-        
-        // Duration filter
-        const durationValue = durationFilter ? durationFilter.value : '';
-        if (durationValue && durationValue !== 'all') {
-            let durationLabel = '';
-            switch (durationValue) {
-                case 'short': durationLabel = 'Short (< 1 hour)'; break;
-                case 'medium': durationLabel = 'Medium (1-3 hours)'; break;
-                case 'long': durationLabel = 'Long (> 3 hours)'; break;
-                default: durationLabel = durationValue;
-            }
-            activeFilters.push({
-                type: 'Duration',
-                value: durationLabel,
-                element: 'duration'
-            });
-        }
-        
-        // Rating filter
-        const ratingValue = ratingFilter ? parseFloat(ratingFilter.value) : 0;
-        if (ratingValue > 0) {
-            activeFilters.push({
-                type: 'Rating',
-                value: `${ratingValue}+ stars`,
-                element: 'rating'
-            });
-        }
-        
-        // Language filter
-        const languageValue = languageFilter ? languageFilter.value : '';
-        if (languageValue && languageValue !== 'all') {
-            activeFilters.push({
-                type: 'Language',
-                value: languageValue,
-                element: 'language'
-            });
-        }
-        
-        if (activeFilters.length === 0) {
-            activeFiltersContainer.innerHTML = '';
-            activeFiltersContainer.style.display = 'none';
-            return;
-        }
-        
-        let filtersHTML = '<div class="flex flex-wrap items-center gap-2">';
-        filtersHTML += '<span class="text-sm text-gray-600 font-medium">Active filters:</span>';
-        
-        activeFilters.forEach(filter => {
-            filtersHTML += `
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                    ${filter.type}: ${filter.value}
-                    <button type="button" class="ml-1.5 flex-shrink-0 h-4 w-4 rounded-full inline-flex items-center justify-center text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:outline-none focus:bg-indigo-500 focus:text-white remove-filter" data-element="${filter.element}">
-                        <span class="sr-only">Remove filter</span>
-                        <svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
-                            <path stroke-linecap="round" stroke-width="1.5" d="M1 1l6 6m0-6L1 7" />
-                        </svg>
-                    </button>
-                </span>
-            `;
-        });
-        
-        filtersHTML += `
-            <button id="clear-all-filters" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-                Clear all
-            </button>
-        `;
-        
-        filtersHTML += '</div>';
-        activeFiltersContainer.innerHTML = filtersHTML;
-        activeFiltersContainer.style.display = 'block';
-        
-        // Add event listeners to remove filter buttons
-        document.querySelectorAll('.remove-filter').forEach(button => {
-            button.addEventListener('click', function() {
-                const element = this.getAttribute('data-element');
-                removeFilter(element);
-            });
-        });
-        
-        // Add event listener to clear all filters button
-        const clearAllBtn = document.getElementById('clear-all-filters');
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', resetAllFilters);
-        }
-    }
-    
-    // Remove specific filter
-    function removeFilter(element) {
-        switch (element) {
-            case 'category':
-                currentFilter = 'all';
-                document.querySelectorAll('.filter-btn').forEach(btn => {
-                    if (btn.getAttribute('data-category') === 'all') {
-                        btn.classList.add('active');
-                    } else {
-                        btn.classList.remove('active');
-                    }
-                });
-                break;
-            case 'difficulty':
-                if (difficultyFilter) difficultyFilter.value = 'all';
-                break;
-            case 'duration':
-                if (durationFilter) durationFilter.value = 'all';
-                break;
-            case 'rating':
-                if (ratingFilter) ratingFilter.value = '0';
-                break;
-            case 'language':
-                if (languageFilter) languageFilter.value = 'all';
-                break;
-        }
-        applyFilters();
-    }
-
-    // Sort courses based on selected criteria
-    function sortCourses(courses, sortType) {
-        // Create a copy of the array to avoid modifying the original
-        const coursesCopy = [...courses];
-
-        switch(sortType) {
-            case 'newest':
-                // Sort by creation date (newest first)
-                return coursesCopy.sort((a, b) => {
-                    const dateA = getNormalizedDate(a.createdAt || a.created || a.date || a.timestamp);
-                    const dateB = getNormalizedDate(b.createdAt || b.created || b.date || b.timestamp);
-                    return dateB - dateA;
-                });
-
-            case 'oldest':
-                // Sort by creation date (oldest first)
-                return coursesCopy.sort((a, b) => {
-                    const dateA = getNormalizedDate(a.createdAt || a.created || a.date || a.timestamp);
-                    const dateB = getNormalizedDate(b.createdAt || b.created || b.date || b.timestamp);
-                    return dateA - dateB;
-                });
-
-            case 'enrollmentAsc':
-                // Sort by enrollment count (ascending)
-                return coursesCopy.sort((a, b) => {
-                    const countA = a.enrollmentCount || 0;
-                    const countB = b.enrollmentCount || 0;
-                    return countA - countB;
-                });
-
-            case 'enrollmentDesc':
-                // Sort by enrollment count (descending)
-                return coursesCopy.sort((a, b) => {
-                    const countA = a.enrollmentCount || 0;
-                    const countB = b.enrollmentCount || 0;
-                    return countB - countA;
-                });
-                
-            case 'ratingDesc':
-                // Sort by rating (descending)
-                return coursesCopy.sort((a, b) => {
-                    const ratingA = a.rating || 0;
-                    const ratingB = b.rating || 0;
-                    return ratingB - ratingA;
-                });
-                
-            case 'durationAsc':
-                // Sort by duration (ascending)
-                return coursesCopy.sort((a, b) => {
-                    const durationA = a.lessons ? a.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0) : 0;
-                    const durationB = b.lessons ? b.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0) : 0;
-                    return durationA - durationB;
-                });
-                
-            case 'durationDesc':
-                // Sort by duration (descending)
-                return coursesCopy.sort((a, b) => {
-                    const durationA = a.lessons ? a.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0) : 0;
-                    const durationB = b.lessons ? b.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0) : 0;
-                    return durationB - durationA;
-                });
-
-            default:
-                return coursesCopy;
-        }
+        // The options are already in the HTML, but we could dynamically generate them if needed
+        console.log('Difficulty filters rendered');
     }
 
     // Render courses
     function renderCourses(courses) {
         if (!coursesContainer) return;
 
-        console.log('Rendering courses:', courses);
-
-        if (!courses || courses.length === 0) {
+        if (courses.length === 0) {
             coursesContainer.innerHTML = `
                 <div class="col-span-full text-center py-20">
                     <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <h3 class="mt-6 text-2xl font-bold text-gray-900">No courses found</h3>
-                    <p class="mt-3 text-gray-600 max-w-md mx-auto">Try adjusting your search or filter criteria to find what you're looking for.</p>
+                    <p class="mt-3 text-gray-600 max-w-md mx-auto">Try adjusting your search or filter criteria</p>
+                    <div class="mt-8">
+                        <button id="clear-filters-btn" class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition duration-300 shadow-md hover:shadow-lg">
+                            Clear Filters
+                        </button>
+                    </div>
                 </div>
             `;
+            
+            // Add event listener to clear filters button
+            const clearFiltersBtn = document.getElementById('clear-filters-btn');
+            if (clearFiltersBtn) {
+                clearFiltersBtn.addEventListener('click', function() {
+                    // Reset all filters
+                    currentSearchTerm = '';
+                    currentFilter = 'all';
+                    difficultyFilter = 'all';
+                    durationFilter = 'all';
+                    instructorFilter = 'all';
+                    currentSort = 'newest';
+                    
+                    // Reset UI elements
+                    if (searchInput) searchInput.value = '';
+                    if (sortSelect) sortSelect.value = 'newest';
+                    if (difficultyFilterSelect) difficultyFilterSelect.value = 'all';
+                    if (durationFilterSelect) durationFilterSelect.value = 'all';
+                    if (instructorFilterSelect) instructorFilterSelect.value = 'all';
+                    
+                    // Update active button styling
+                    document.querySelectorAll('.filter-btn').forEach(btn => {
+                        if (btn.getAttribute('data-category') === 'all') {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+                    
+                    applyFilters();
+                });
+            }
+            
             return;
         }
 
@@ -781,156 +597,72 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Processing courses for display:', courses);
         courses.forEach(course => {
             console.log('Processing course:', course);
-            // Calculate average duration of lessons
-            let totalDuration = 0;
-            let lessonCount = 0;
-            if (course.lessons) {
-                Object.values(course.lessons).forEach(lesson => {
-                    totalDuration += lesson.duration || 0;
-                    lessonCount++;
-                });
+            
+            // Map category ID to name if it's an ID, otherwise use as is
+            let categoryName = course.category || 'General';
+            if (categoryMap && categoryMap[course.category]) {
+                categoryName = categoryMap[course.category];
             }
-
-            // Get category name, mapping from ID if necessary
-            let categoryName = 'General';
-            if (course.category) {
-                // Check if it's a category ID that needs to be mapped to a name
-                categoryName = categoryMap[course.category] || course.category;
-            }
-
-            // Determine badge color based on category
-            let badgeClass = 'badge-primary';
-            if (categoryName) {
-                const category = categoryName.toLowerCase();
-                if (category.includes('web')) {
-                    badgeClass = 'bg-blue-100 text-blue-800';
-                } else if (category.includes('data')) {
-                    badgeClass = 'bg-green-100 text-green-800';
-                } else if (category.includes('design')) {
-                    badgeClass = 'bg-purple-100 text-purple-800';
-                } else if (category.includes('mobile')) {
-                    badgeClass = 'bg-amber-100 text-amber-800';
-                } else if (category.includes('business')) {
-                    badgeClass = 'bg-indigo-100 text-indigo-800';
-                } else {
-                    badgeClass = 'bg-gray-100 text-gray-800';
-                }
-            }
-
+            
+            // Get duration category
+            const durationCategory = getDurationCategory(course.duration);
+            let durationText = course.duration || 'N/A';
+            if (durationCategory === 'short') durationText += ' (Short)';
+            else if (durationCategory === 'medium') durationText += ' (Medium)';
+            else if (durationCategory === 'long') durationText += ' (Long)';
+            
             coursesHTML += `
-                <div class="course-card">
-                    <div class="course-image-container">
-                        <img
-                            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjMiIHk9IjQiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxMyIgcng9IjIiLz48cG9seWxpbmUgcG9pbnRzPSIxIDIwIDggMTMgMTMgMTgiLz48cG9seWxpbmUgcG9pbnRzPSIyMSAyMCAxNi41IDE1LjUgMTQgMTgiLz48bGluZSB4MT0iOSIgeDI9IjkiIHkxPSI5IiB5Mj0iOSIvPjwvc3ZnPg=="
-                            data-src="${course.thumbnail || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}"
-                            alt="${course.title}"
-                            class="course-image lazy-load"
-                            loading="lazy"
-                            onerror="this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80';"
-                        >
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover-lift transition-all duration-300 course-card">
+                    <div class="h-48 overflow-hidden">
+                        <img class="w-full h-full object-cover lazy-load" data-src="${course.thumbnail || 'https://images.unsplash.com/photo-1547658719-da2b51169166?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}" alt="${course.title}" loading="lazy">
                     </div>
-                    <div class="course-card-content">
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="badge ${badgeClass}">
-                                ${categoryName}
-                            </span>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">${course.title}</h3>
+                                <p class="mt-1 text-sm text-gray-500">${categoryName} • ${course.difficulty || 'Beginner'}</p>
+                            </div>
                             <div class="flex items-center text-amber-500">
                                 <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                 </svg>
-                                <span class="ml-1 text-gray-700 font-semibold text-sm">4.5</span>
+                                <span class="ml-1 text-gray-600">${course.rating || '4.5'}</span>
                             </div>
                         </div>
-                        <h3 class="course-card-title">${course.title}</h3>
-                        <p class="course-card-description">
-                            ${course.description || 'No description available for this course.'}
-                        </p>
-                        <div class="course-card-meta">
-                            <div class="flex items-center text-gray-600 text-sm">
-                                <svg class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span class="font-medium">${formatDuration(Math.ceil(totalDuration)) || '0m 0s'}</span>
-                                ${course.language ? `<span class="ml-3 badge bg-gray-100 text-gray-800">${course.language}</span>` : ''}
-                                ${course.enrollmentCount ? `<span class="ml-3 badge bg-green-100 text-green-800">${course.enrollmentCount} enrolled</span>` : ''}
-                            </div>
-                            <button class="btn btn-primary enroll-btn" data-course-id="${course.id}">
-                                Enroll Now
-                            </button>
+                        
+                        <p class="mt-3 text-gray-600 line-clamp-2">${course.description || 'No description available'}</p>
+                        
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                ${course.lessons ? course.lessons.length : 0} lessons
+                            </span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                ${durationText}
+                            </span>
+                            ${course.instructor ? `
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                ${course.instructor}
+                            </span>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="mt-6">
+                            <a href="player.html?courseId=${course.id}" class="w-full px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition duration-300 text-center inline-block">
+                                View Course
+                            </a>
                         </div>
                     </div>
                 </div>
             `;
-
         });
 
         console.log('Generated courses HTML:', coursesHTML);
         coursesContainer.innerHTML = coursesHTML;
         console.log('Courses container updated with', courses.length, 'courses');
-
+        
         // Observe images for lazy loading
         document.querySelectorAll('.lazy-load').forEach(img => {
             imageObserver.observe(img);
         });
-
-        // Add event listeners to enroll buttons
-        document.querySelectorAll('.enroll-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const courseId = this.getAttribute('data-course-id');
-                enrollInCourse(courseId);
-            });
-        });
-    }
-
-    // Enroll in a course
-    async function enrollInCourse(courseId) {
-        try {
-            // Get current user
-            const { auth } = firebaseServices;
-            const user = auth.currentUser;
-            if (!user) {
-                // Redirect to login page
-                window.location.href = 'auth/login.html';
-                return;
-            }
-
-            // Show loading state on button
-            const button = document.querySelector(`.enroll-btn[data-course-id="${courseId}"]`);
-            const originalText = button.textContent;
-            button.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Enrolling...';
-            button.disabled = true;
-
-            // Enroll user in course using Firebase
-            await firebaseServices.enrollUserInCourse(user.uid, courseId);
-            utils.showNotification('Successfully enrolled in course!', 'success');
-
-            // Redirect to dashboard after a short delay
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 1500);
-        } catch (error) {
-            console.error('Error enrolling in course:', error);
-            utils.showNotification('Error enrolling in course: ' + error.message, 'error');
-
-            // Reset button
-            const button = document.querySelector(`.enroll-btn[data-course-id="${courseId}"]`);
-            button.textContent = 'Enroll Now';
-            button.disabled = false;
-        }
-    }
-
-    // Format duration from seconds to HH:MM:SS or MM:SS format
-    function formatDuration(seconds) {
-        if (!seconds) return '0m 0s';
-
-        const hrs = Math.floor(seconds / 3600);
-        const mins = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-
-        if (hrs > 0) {
-            return `${hrs}h ${mins}m`;
-        } else {
-            return `${mins}m ${secs}s`;
-        }
     }
 });

@@ -661,16 +661,23 @@ window.firebaseServices = {
     trackRecommendationInteraction: async (userId, courseId, interactionType) => {
         try {
             const { ref, get, update } = await import("firebase/database");
-            
-            // Reference to user's recommendation interactions
             const interactionsRef = ref(rtdb, `userAnalytics/${userId}/recommendationInteractions/${courseId}`);
+            const snapshot = await get(interactionsRef);
+            
             const interactionData = {
                 type: interactionType,
                 timestamp: new Date().toISOString()
             };
-            await update(interactionsRef, interactionData);
             
-            return true;
+            if (snapshot.exists()) {
+                // Update existing interaction
+                await update(interactionsRef, interactionData);
+            } else {
+                // Create new interaction
+                await set(interactionsRef, interactionData);
+            }
+            
+            return interactionData;
         } catch (error) {
             console.error('Error tracking recommendation interaction:', error);
             throw error;
@@ -681,8 +688,6 @@ window.firebaseServices = {
     getUserRecommendationInteractions: async (userId) => {
         try {
             const { ref, get } = await import("firebase/database");
-            
-            // Reference to user's recommendation interactions
             const interactionsRef = ref(rtdb, `userAnalytics/${userId}/recommendationInteractions`);
             const snapshot = await get(interactionsRef);
             
@@ -700,30 +705,23 @@ window.firebaseServices = {
     // Function to update user's favorite categories based on interactions
     updateUserFavoriteCategories: async (userId) => {
         try {
-            const { ref, get, update } = await import("firebase/database");
-            
-            // Get user's recommendation interactions
-            const interactionsRef = ref(rtdb, `userAnalytics/${userId}/recommendationInteractions`);
-            const interactionsSnapshot = await get(interactionsRef);
-            
-            if (!interactionsSnapshot.exists()) {
-                return {};
-            }
-            
-            const interactions = interactionsSnapshot.val();
+            const interactions = await firebaseServices.getUserRecommendationInteractions(userId);
             const categoryCount = {};
             
             // Count interactions per category
             for (const courseId in interactions) {
                 const course = await firebaseServices.getCourse(courseId);
-                if (course && course.category) {
-                    categoryCount[course.category] = (categoryCount[course.category] || 0) + 1;
+                if (course && course.categories) {
+                    course.categories.forEach(category => {
+                        categoryCount[category] = (categoryCount[category] || 0) + 1;
+                    });
                 }
             }
             
-            // Update user's favorite categories
-            const favoriteCategoriesRef = ref(rtdb, `userAnalytics/${userId}/favoriteCategories`);
-            await update(favoriteCategoriesRef, categoryCount);
+            // Update user analytics with favorite categories
+            const { ref, update } = await import("firebase/database");
+            const analyticsRef = ref(rtdb, `userAnalytics/${userId}`);
+            await update(analyticsRef, { favoriteCategories: categoryCount });
             
             return categoryCount;
         } catch (error) {
@@ -733,99 +731,35 @@ window.firebaseServices = {
     },
     
     // Smart search function for courses
-    smartCourseSearch: async (searchTerm, filters = {}) => {
+    smartSearchCourses: async (query, filters = {}) => {
         try {
-            const { ref, get } = await import("firebase/database");
-            const coursesRef = ref(rtdb, 'courses');
-            const snapshot = await get(coursesRef);
-            const coursesData = snapshot.val();
-
-            // Convert object to array format
-            const courses = [];
-            if (coursesData) {
-                Object.keys(coursesData).forEach(key => {
-                    courses.push({ id: key, ...coursesData[key] });
-                });
-            }
-
-            // Apply search term filtering
-            let filteredCourses = courses;
-            if (searchTerm) {
-                filteredCourses = courses.filter(course => {
-                    // Split search term into words for better matching
-                    const searchWords = searchTerm.toLowerCase().split(/\s+/);
-                    
-                    // Fields to search in
-                    const searchableFields = [
-                        course.title,
-                        course.description,
-                        course.category,
-                        course.instructor,
-                        course.language,
-                        course.difficulty
-                    ].filter(Boolean).map(field => field.toLowerCase());
-                    
-                    // Check for exact phrase match
-                    const phraseMatch = searchableFields.some(field => 
-                        field.includes(searchTerm.toLowerCase())
-                    );
-                    
-                    if (phraseMatch) return true;
-                    
-                    // Check for word matches
-                    return searchWords.every(word => 
-                        searchableFields.some(field => field.includes(word))
-                    );
-                });
-            }
-
-            // Apply additional filters
-            if (filters.category && filters.category !== 'all') {
-                filteredCourses = filteredCourses.filter(course => 
-                    course.category && course.category.toLowerCase() === filters.category.toLowerCase()
-                );
-            }
-            
-            if (filters.difficulty && filters.difficulty !== 'all') {
-                filteredCourses = filteredCourses.filter(course => 
-                    course.difficulty && course.difficulty.toLowerCase() === filters.difficulty.toLowerCase()
-                );
-            }
-            
-            if (filters.duration && filters.duration !== 'all') {
-                filteredCourses = filteredCourses.filter(course => {
-                    if (!course.lessons || !Array.isArray(course.lessons)) return false;
-                    
-                    const totalDuration = course.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
-                    
-                    switch (filters.duration) {
-                        case 'short':
-                            return totalDuration <= 3600; // <= 1 hour
-                        case 'medium':
-                            return totalDuration > 3600 && totalDuration <= 10800; // 1-3 hours
-                        case 'long':
-                            return totalDuration > 10800; // > 3 hours
-                        default:
-                            return true;
+            const courses = await firebaseServices.getCourses();
+            const filteredCourses = courses.filter(course => {
+                // Filter by query
+                if (query) {
+                    const lowerCaseQuery = query.toLowerCase();
+                    if (!course.title.toLowerCase().includes(lowerCaseQuery) &&
+                        !course.description.toLowerCase().includes(lowerCaseQuery)) {
+                        return false;
                     }
-                });
-            }
+                }
+                
+                // Filter by language
+                if (filters.language && course.language !== filters.language) {
+                    return false;
+                }
+                
+                // Filter by category
+                if (filters.category && !course.categories.includes(filters.category)) {
+                    return false;
+                }
+                
+                return true;
+            });
             
-            if (filters.minRating) {
-                filteredCourses = filteredCourses.filter(course => 
-                    course.rating && course.rating >= parseFloat(filters.minRating)
-                );
-            }
-            
-            if (filters.language && filters.language !== 'all') {
-                filteredCourses = filteredCourses.filter(course => 
-                    course.language && course.language.toLowerCase() === filters.language.toLowerCase()
-                );
-            }
-
             return filteredCourses;
         } catch (error) {
-            console.error('Error performing smart course search:', error);
+            console.error('Error performing smart search:', error);
             throw error;
         }
     },
@@ -834,11 +768,18 @@ window.firebaseServices = {
     getAvailableLanguages: async () => {
         try {
             const courses = await firebaseServices.getCourses();
-            const languages = [...new Set(courses.map(course => course.language).filter(Boolean))];
-            return languages;
+            const languages = new Set();
+            
+            courses.forEach(course => {
+                if (course.language) {
+                    languages.add(course.language);
+                }
+            });
+            
+            return Array.from(languages);
         } catch (error) {
             console.error('Error fetching available languages:', error);
-            return ['English']; // Default fallback
+            throw error;
         }
     },
     
@@ -846,21 +787,325 @@ window.firebaseServices = {
     getCourseCategoriesWithCounts: async () => {
         try {
             const courses = await firebaseServices.getCourses();
-            const categoryCounts = {};
+            const categoryCount = {};
             
             courses.forEach(course => {
-                if (course.category) {
-                    categoryCounts[course.category] = (categoryCounts[course.category] || 0) + 1;
+                if (course.categories) {
+                    course.categories.forEach(category => {
+                        categoryCount[category] = (categoryCount[category] || 0) + 1;
+                    });
                 }
             });
             
-            // Convert to array and sort by count
-            return Object.entries(categoryCounts)
-                .map(([name, count]) => ({ name, count }))
-                .sort((a, b) => b.count - a.count);
+            return categoryCount;
         } catch (error) {
             console.error('Error fetching course categories with counts:', error);
-            return [];
+            throw error;
+        }
+    },
+    
+    // Function to update user streak and consistency data
+    updateUserStreakData: async (userId) => {
+        try {
+            const { ref, get, update } = await import("firebase/database");
+            const analyticsRef = ref(rtdb, `userAnalytics/${userId}`);
+            const snapshot = await get(analyticsRef);
+            
+            if (!snapshot.exists()) {
+                return null;
+            }
+            
+            const analytics = snapshot.val();
+            const dailyActivity = analytics.dailyActivity || {};
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Get sorted dates
+            const dates = Object.keys(dailyActivity).sort();
+            
+            // Calculate current streak
+            let currentStreak = 0;
+            let currentDate = new Date();
+            
+            // Check backwards from today to count consecutive days with activity
+            while (true) {
+                const checkDate = currentDate.toISOString().split('T')[0];
+                if (dailyActivity[checkDate] && 
+                    (dailyActivity[checkDate].studyTime > 0 || 
+                     dailyActivity[checkDate].lessonsCompleted > 0)) {
+                    currentStreak++;
+                    currentDate.setDate(currentDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            
+            // Calculate longest streak
+            let longestStreak = currentStreak;
+            if (dates.length > 0) {
+                let tempStreak = 0;
+                let previousDate = null;
+                
+                for (const date of dates) {
+                    const currentDateObj = new Date(date);
+                    
+                    if (previousDate) {
+                        const diffTime = previousDate - currentDateObj;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays === 1) {
+                            // Consecutive day
+                            tempStreak++;
+                        } else {
+                            // Break in streak
+                            longestStreak = Math.max(longestStreak, tempStreak);
+                            tempStreak = 1;
+                        }
+                    } else {
+                        tempStreak = 1;
+                    }
+                    
+                    previousDate = currentDateObj;
+                }
+                
+                longestStreak = Math.max(longestStreak, tempStreak);
+            }
+            
+            // Update analytics with streak data
+            const updatedData = {
+                learningStreak: currentStreak,
+                longestLearningStreak: longestStreak,
+                lastActiveDate: today
+            };
+            
+            await update(analyticsRef, updatedData);
+            
+            return {
+                ...analytics,
+                ...updatedData
+            };
+        } catch (error) {
+            console.error('Error updating user streak data:', error);
+            throw error;
+        }
+    },
+    
+    // Function to get detailed learning patterns
+    getLearningPatterns: async (userId) => {
+        try {
+            const analytics = await firebaseServices.getUserAnalytics(userId);
+            if (!analytics || !analytics.dailyActivity) return null;
+            
+            const dailyActivity = analytics.dailyActivity;
+            const dates = Object.keys(dailyActivity).sort();
+            
+            // Calculate learning consistency
+            let totalDays = 0;
+            let activeDays = 0;
+            let totalStudyTime = 0;
+            let totalTimeStudied = 0;
+            
+            dates.forEach(date => {
+                totalDays++;
+                const activity = dailyActivity[date];
+                if (activity.studyTime > 0) {
+                    activeDays++;
+                    totalTimeStudied += activity.studyTime;
+                }
+                totalStudyTime += activity.studyTime || 0;
+            });
+            
+            // Calculate consistency percentage
+            const consistency = totalDays > 0 ? (activeDays / totalDays) * 100 : 0;
+            
+            // Calculate average study time per active day
+            const avgStudyTime = activeDays > 0 ? totalTimeStudied / activeDays : 0;
+            
+            // Find peak learning hours (simplified - would need more detailed data)
+            const peakHours = firebaseServices.findPeakLearningHours(dailyActivity);
+            
+            // Calculate learning velocity (improvement over time)
+            const learningVelocity = firebaseServices.calculateLearningVelocity(dailyActivity);
+            
+            // Calculate weekly averages
+            const weeklyAverages = firebaseServices.calculateWeeklyAverages(dailyActivity);
+            
+            // Calculate category distribution
+            const categoryDistribution = analytics.favoriteCategories || {};
+            
+            return {
+                consistency: Math.round(consistency),
+                avgStudyTime: Math.round(avgStudyTime),
+                totalTimeStudied: Math.round(totalTimeStudied),
+                peakHours: peakHours,
+                learningVelocity: learningVelocity,
+                activeDays: activeDays,
+                totalDays: totalDays,
+                weeklyAverages: weeklyAverages,
+                categoryDistribution: categoryDistribution,
+                longestStreak: analytics.longestLearningStreak || 0,
+                currentStreak: analytics.learningStreak || 0
+            };
+        } catch (error) {
+            console.error('Error getting learning patterns:', error);
+            throw error;
+        }
+    },
+    
+    // Find peak learning hours
+    findPeakLearningHours: (dailyActivity) => {
+        // This is a simplified version - in a real implementation, 
+        // we would have more granular time data
+        const hourCounts = {};
+        
+        // For now, we'll distribute activity across morning/afternoon/evening
+        let morning = 0;
+        let afternoon = 0;
+        let evening = 0;
+        
+        Object.values(dailyActivity).forEach(activity => {
+            if (activity.studyTime > 0) {
+                // Distribute based on study time
+                const portion = activity.studyTime / 3;
+                morning += portion;
+                afternoon += portion;
+                evening += portion;
+            }
+        });
+        
+        return {
+            morning: Math.round((morning / (morning + afternoon + evening)) * 100) || 33,
+            afternoon: Math.round((afternoon / (morning + afternoon + evening)) * 100) || 33,
+            evening: Math.round((evening / (morning + afternoon + evening)) * 100) || 34
+        };
+    },
+    
+    // Calculate learning velocity
+    calculateLearningVelocity: (dailyActivity) => {
+        const dates = Object.keys(dailyActivity).sort();
+        if (dates.length < 2) return 0;
+        
+        // Get first and last week data
+        const firstWeek = dates.slice(0, 7);
+        const lastWeek = dates.slice(-7);
+        
+        // Calculate average study time for each period
+        let firstWeekTotal = 0;
+        let lastWeekTotal = 0;
+        
+        firstWeek.forEach(date => {
+            firstWeekTotal += dailyActivity[date].studyTime || 0;
+        });
+        
+        lastWeek.forEach(date => {
+            lastWeekTotal += dailyActivity[date].studyTime || 0;
+        });
+        
+        const firstWeekAvg = firstWeekTotal / firstWeek.length;
+        const lastWeekAvg = lastWeekTotal / lastWeek.length;
+        
+        // Calculate percentage change
+        if (firstWeekAvg === 0) return lastWeekAvg > 0 ? 100 : 0;
+        
+        return Math.round(((lastWeekAvg - firstWeekAvg) / firstWeekAvg) * 100);
+    },
+    
+    // Calculate weekly averages
+    calculateWeeklyAverages: (dailyActivity) => {
+        const dates = Object.keys(dailyActivity).sort();
+        if (dates.length === 0) return [];
+        
+        const weeks = [];
+        let currentWeek = [];
+        let currentWeekStart = new Date(dates[0]);
+        currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay()); // Start of week (Sunday)
+        
+        dates.forEach(date => {
+            const dateObj = new Date(date);
+            const weekStart = new Date(dateObj);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+            
+            // Check if this date belongs to the current week
+            if (weekStart.getTime() === currentWeekStart.getTime()) {
+                currentWeek.push(date);
+            } else {
+                // Save current week and start a new one
+                if (currentWeek.length > 0) {
+                    weeks.push({
+                        start: currentWeekStart.toISOString().split('T')[0],
+                        dates: [...currentWeek]
+                    });
+                }
+                
+                currentWeekStart = weekStart;
+                currentWeek = [date];
+            }
+        });
+        
+        // Add the last week
+        if (currentWeek.length > 0) {
+            weeks.push({
+                start: currentWeekStart.toISOString().split('T')[0],
+                dates: currentWeek
+            });
+        }
+        
+        // Calculate averages for each week
+        return weeks.map(week => {
+            let totalStudyTime = 0;
+            let totalLessons = 0;
+            let activeDays = 0;
+            
+            week.dates.forEach(date => {
+                const activity = dailyActivity[date];
+                if (activity.studyTime > 0) {
+                    activeDays++;
+                }
+                totalStudyTime += activity.studyTime || 0;
+                totalLessons += activity.lessonsCompleted || 0;
+            });
+            
+            return {
+                weekStart: week.start,
+                avgDailyStudyTime: activeDays > 0 ? Math.round(totalStudyTime / activeDays) : 0,
+                totalStudyTime: Math.round(totalStudyTime),
+                lessonsCompleted: totalLessons,
+                activeDays: activeDays
+            };
+        });
+    },
+    
+    // Function to get user engagement score
+    getUserEngagementScore: async (userId) => {
+        try {
+            const analytics = await firebaseServices.getUserAnalytics(userId);
+            if (!analytics) return 0;
+            
+            // Calculate engagement score based on multiple factors
+            let score = 0;
+            
+            // Factor 1: Consistency (30% weight)
+            const consistency = analytics.dailyActivity ? 
+                (Object.values(analytics.dailyActivity).filter(a => a.studyTime > 0).length / 
+                 Object.keys(analytics.dailyActivity).length) * 100 : 0;
+            score += consistency * 0.3;
+            
+            // Factor 2: Total study time (25% weight)
+            const totalStudyTimeHours = (analytics.totalStudyTime || 0) / 3600;
+            score += Math.min(100, totalStudyTimeHours * 2) * 0.25; // Cap at 100
+            
+            // Factor 3: Courses completed (20% weight)
+            score += Math.min(100, (analytics.coursesCompleted || 0) * 10) * 0.20; // Cap at 100
+            
+            // Factor 4: Lessons completed (15% weight)
+            score += Math.min(100, (analytics.lessonsCompleted || 0) * 2) * 0.15; // Cap at 100
+            
+            // Factor 5: Streak (10% weight)
+            score += Math.min(100, (analytics.learningStreak || 0) * 5) * 0.10; // Cap at 100
+            
+            return Math.round(score);
+        } catch (error) {
+            console.error('Error calculating user engagement score:', error);
+            return 0;
         }
     }
 };
