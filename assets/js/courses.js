@@ -195,12 +195,56 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load courses and categories when page loads
     loadCategoriesAndCourses();
 
-    // Add search event listener
+    // Add search event listener with enhanced functionality
     if (searchInput) {
-        searchInput.addEventListener('input', utils.debounce(function(e) {
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchDebounceTimer);
             currentSearchTerm = e.target.value.toLowerCase();
-            applyFilters();
-        }, 300));
+            
+            // Show clear button when there's text
+            if (clearSearchBtn) {
+                clearSearchBtn.style.display = currentSearchTerm ? 'block' : 'none';
+            }
+            
+            // Debounce search to improve performance
+            searchDebounceTimer = setTimeout(() => {
+                if (currentSearchTerm.length > 1) {
+                    // Show search suggestions
+                    showSearchSuggestions(currentSearchTerm);
+                } else if (searchSuggestions) {
+                    searchSuggestions.innerHTML = '';
+                    searchSuggestions.style.display = 'none';
+                }
+                applyFilters();
+            }, 300);
+        });
+        
+        // Handle search submission
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addToSearchHistory(currentSearchTerm);
+                applyFilters();
+                if (searchSuggestions) {
+                    searchSuggestions.style.display = 'none';
+                }
+            }
+        });
+    }
+    
+    // Clear search functionality
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            if (searchInput) {
+                searchInput.value = '';
+                currentSearchTerm = '';
+                clearSearchBtn.style.display = 'none';
+                if (searchSuggestions) {
+                    searchSuggestions.innerHTML = '';
+                    searchSuggestions.style.display = 'none';
+                }
+                applyFilters();
+            }
+        });
     }
 
     // Add sort event listener
