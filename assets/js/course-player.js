@@ -184,6 +184,120 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Track lesson progress for analytics
+    function trackLessonProgress(timeSpent, completed) {
+        if (currentUser && currentCourse && currentEnrollment && currentLessonIndex < currentCourse.lessons.length) {
+            const currentLesson = currentCourse.lessons[currentLessonIndex];
+            
+            // Update lesson analytics
+            firebaseServices.updateLessonAnalytics(
+                currentUser.uid,
+                currentCourse.id,
+                currentLesson.id,
+                timeSpent,
+                completed
+            ).catch(error => {
+                console.error('Error updating lesson analytics:', error);
+            });
+        }
+    }
+    
+    // Mark current lesson as complete
+    function markLessonComplete() {
+        if (!currentEnrollment || !currentCourse || currentLessonIndex >= currentCourse.lessons.length) {
+            return;
+        }
+        
+        const currentLesson = currentCourse.lessons[currentLessonIndex];
+        const lessonId = currentLesson.id;
+        
+        // Calculate progress percentage
+        const totalLessons = currentCourse.lessons.length;
+        const completedLessons = currentEnrollment.completedLessons || [];
+        
+        // Add current lesson to completed lessons if not already there
+        let updatedCompletedLessons = [...completedLessons];
+        if (!updatedCompletedLessons.includes(lessonId)) {
+            updatedCompletedLessons.push(lessonId);
+        }
+        
+        // Calculate new progress (0-100)
+        const newProgress = Math.round((updatedCompletedLessons.length / totalLessons) * 100);
+        
+        // Update enrollment in Firebase
+        firebaseServices.updateLessonProgress(currentEnrollment.id, lessonId, newProgress)
+            .then(updatedEnrollment => {
+                console.log('Lesson marked as complete:', updatedEnrollment);
+                currentEnrollment = updatedEnrollment;
+                
+                // Track analytics
+                const timeSpent = totalLessonTime;
+                trackLessonProgress(timeSpent, true);
+                
+                // Check if course is completed
+                if (newProgress === 100) {
+                    markCourseComplete();
+                }
+                
+                // Update UI
+                updateProgressDisplay(newProgress);
+                updateLessonNavigation();
+                
+                utils.showNotification('Lesson marked as complete!', 'success');
+            })
+            .catch(error => {
+                console.error('Error marking lesson as complete:', error);
+                utils.showNotification('Error marking lesson as complete: ' + error.message, 'error');
+            });
+    }
+    
+    // Mark course as complete
+    function markCourseComplete() {
+        if (currentUser && currentCourse) {
+            // Update course completion analytics
+            firebaseServices.updateCourseCompletionAnalytics(currentUser.uid, currentCourse.id)
+                .then(() => {
+                    console.log('Course completion analytics updated');
+                    
+                    // Check for new achievements
+                    checkForNewAchievements();
+                })
+                .catch(error => {
+                    console.error('Error updating course completion analytics:', error);
+                });
+        }
+    }
+    
+    // Check for new achievements
+    function checkForNewAchievements() {
+        if (currentUser) {
+            firebaseServices.getUserAchievements(currentUser.uid)
+                .then(achievements => {
+                    // Check if any new achievements were earned
+                    const newlyEarned = achievements.filter(achievement => 
+                        achievement.earned && !localStorage.getItem(`achievement_${achievement.id}_awarded`)
+                    );
+                    
+                    if (newlyEarned.length > 0) {
+                        // Award achievements
+                        newlyEarned.forEach(achievement => {
+                            firebaseServices.awardAchievement(currentUser.uid, achievement.id)
+                                .then(() => {
+                                    localStorage.setItem(`achievement_${achievement.id}_awarded`, 'true');
+                                    utils.showNotification(`Congratulations! You've earned the "${achievement.name}" achievement!`, 'success');
+                                })
+                                .catch(error => {
+                                    console.error('Error awarding achievement:', error);
+                                });
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking for achievements:', error);
+                });
+        }
+    }
+    
     // Render the course
     function renderCourse() {
         // Hide loading state and show main content

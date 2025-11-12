@@ -152,6 +152,9 @@ class AuthState {
             
             await firebaseServices.createUserInDatabase(userData);
             
+            // Initialize user analytics
+            await firebaseServices.initializeUserAnalytics(user.uid);
+            
             this.user = user;
             this.isAuthenticated = true;
             this.isLoading = false;

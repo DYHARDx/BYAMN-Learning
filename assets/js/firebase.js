@@ -179,7 +179,6 @@ window.firebaseServices = {
     // Function to initialize detailed analytics for a user
     initializeUserAnalytics: async (userId) => {
         try {
-            const { ref, get, set } = await import("firebase/database");
             const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
             const snapshot = await get(analyticsRef);
             
@@ -194,8 +193,11 @@ window.firebaseServices = {
                     monthlyActivity: {},
                     favoriteCategories: {},
                     learningStreak: 0,
+                    currentStreak: 0,
+                    longestStreak: 0,
                     lastActiveDate: null,
-                    createdAt: new Date().toISOString()
+                    createdAt: new Date().toISOString(),
+                    achievements: {}
                 };
                 await set(analyticsRef, analyticsData);
                 return analyticsData;
@@ -211,35 +213,71 @@ window.firebaseServices = {
     // Function to update lesson analytics
     updateLessonAnalytics: async (userId, courseId, lessonId, timeSpent, completionStatus) => {
         try {
-            const { ref, get, update } = await import("firebase/database");
-            
             // Update lesson-specific analytics
             const lessonAnalyticsRef = ref(rtdb, `userAnalytics/${userId}/lessonDetails/${courseId}/${lessonId}`);
             const lessonData = {
                 timeSpent: timeSpent,
                 completed: completionStatus,
-                lastAccessed: new Date().toISOString(),
-                accesses: firebaseServices.increment(1)
+                lastAccessed: new Date().toISOString()
             };
-            await update(lessonAnalyticsRef, lessonData);
+            await set(lessonAnalyticsRef, lessonData);
             
             // Update user overall analytics
             const userAnalyticsRef = ref(rtdb, `userAnalytics/${userId}`);
+            
+            // Get current analytics data
+            const snapshot = await get(userAnalyticsRef);
+            const currentData = snapshot.val() || {};
+            
+            // Update streak tracking
+            const today = new Date().toISOString().split('T')[0];
+            let currentStreak = currentData.currentStreak || 0;
+            let longestStreak = currentData.longestStreak || 0;
+            const lastActiveDate = currentData.lastActiveDate;
+            
+            // Check if we need to update streak
+            if (!lastActiveDate || lastActiveDate !== today) {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                
+                if (lastActiveDate === yesterdayStr) {
+                    // Continue streak
+                    currentStreak++;
+                } else {
+                    // Reset streak (except for first day)
+                    if (lastActiveDate) {
+                        currentStreak = 1;
+                    }
+                }
+                
+                // Update longest streak if needed
+                if (currentStreak > longestStreak) {
+                    longestStreak = currentStreak;
+                }
+            }
+            
             const userData = {
-                totalStudyTime: firebaseServices.increment(timeSpent),
-                lessonsCompleted: completionStatus ? firebaseServices.increment(1) : 0,
-                lastActiveDate: new Date().toISOString()
+                totalStudyTime: (currentData.totalStudyTime || 0) + timeSpent,
+                lessonsCompleted: completionStatus ? (currentData.lessonsCompleted || 0) + 1 : currentData.lessonsCompleted || 0,
+                lastActiveDate: today,
+                currentStreak: currentStreak,
+                longestStreak: longestStreak
             };
+            
             await update(userAnalyticsRef, userData);
             
             // Update daily activity
-            const today = new Date().toISOString().split('T')[0];
             const dailyActivityRef = ref(rtdb, `userAnalytics/${userId}/dailyActivity/${today}`);
-            const dailyData = {
-                studyTime: firebaseServices.increment(timeSpent),
-                lessonsCompleted: completionStatus ? firebaseServices.increment(1) : 0
+            const dailySnapshot = await get(dailyActivityRef);
+            const dailyData = dailySnapshot.val() || {};
+            
+            const updatedDailyData = {
+                studyTime: (dailyData.studyTime || 0) + timeSpent,
+                lessonsCompleted: completionStatus ? (dailyData.lessonsCompleted || 0) + 1 : dailyData.lessonsCompleted || 0
             };
-            await update(dailyActivityRef, dailyData);
+            
+            await set(dailyActivityRef, updatedDailyData);
             
             return true;
         } catch (error) {
@@ -251,13 +289,17 @@ window.firebaseServices = {
     // Function to update course completion analytics
     updateCourseCompletionAnalytics: async (userId, courseId) => {
         try {
-            const { ref, update } = await import("firebase/database");
-            
             // Update user overall analytics
             const userAnalyticsRef = ref(rtdb, `userAnalytics/${userId}`);
+            
+            // Get current analytics data
+            const snapshot = await get(userAnalyticsRef);
+            const currentData = snapshot.val() || {};
+            
             const userData = {
-                coursesCompleted: firebaseServices.increment(1)
+                coursesCompleted: (currentData.coursesCompleted || 0) + 1
             };
+            
             await update(userAnalyticsRef, userData);
             
             // Update course completion in user analytics
@@ -266,7 +308,7 @@ window.firebaseServices = {
                 completedAt: new Date().toISOString(),
                 completionStatus: true
             };
-            await update(courseCompletionRef, courseData);
+            await set(courseCompletionRef, courseData);
             
             return true;
         } catch (error) {
@@ -278,7 +320,6 @@ window.firebaseServices = {
     // Function to get user analytics
     getUserAnalytics: async (userId) => {
         try {
-            const { ref, get } = await import("firebase/database");
             const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
             const snapshot = await get(analyticsRef);
             
@@ -599,8 +640,6 @@ window.firebaseServices = {
     // Function to check if user has earned an achievement
     checkAchievementEarned: async (userId, achievement) => {
         try {
-            const { ref, get } = await import("firebase/database");
-            
             // Get user analytics
             const analyticsRef = ref(rtdb, 'userAnalytics/' + userId);
             const snapshot = await get(analyticsRef);
@@ -617,7 +656,7 @@ window.firebaseServices = {
             }
             
             if (achievement.criteria.learningStreak) {
-                return (analytics.learningStreak || 0) >= achievement.criteria.learningStreak;
+                return (analytics.currentStreak || 0) >= achievement.criteria.learningStreak;
             }
             
             if (achievement.criteria.totalStudyTime) {
