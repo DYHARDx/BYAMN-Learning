@@ -4,7 +4,7 @@
 let allCourses = [];
 let currentFilter = 'all';
 let currentSearchTerm = '';
-let currentSort = 'newest'; // newest, oldest, enrollmentAsc, enrollmentDesc
+let currentSort = 'newest'; // newest, oldest, enrollmentAsc, enrollmentDesc, ratingDesc, priceAsc, priceDesc
 let categoryMap = {}; // Map to store category ID to name mappings
 let difficultyFilter = 'all'; // all, beginner, intermediate, advanced
 let durationFilter = 'all'; // all, short, medium, long
