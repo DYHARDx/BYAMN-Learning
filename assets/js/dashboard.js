@@ -21,17 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const activityChartContainer = document.getElementById('activity-chart-container');
     const streakChartContainer = document.getElementById('streak-chart-container');
     
-    // Video analytics elements
-    const videoAnalyticsContainer = document.getElementById('video-analytics-container');
-    const totalPlayEventsElement = document.getElementById('total-play-events');
-    const totalPauseEventsElement = document.getElementById('total-pause-events');
-    const avgPlaybackSpeedElement = document.getElementById('avg-playback-speed');
-    const totalSeekEventsElement = document.getElementById('total-seek-events');
-    const engagementScoreElement = document.getElementById('engagement-score');
-    
-    // Recommendation elements
-    const recommendationsContainer = document.getElementById('recommendations-container');
-    const recommendationReasonElement = document.getElementById('recommendation-reason');
+    // Achievements element
+    const achievementsContainer = document.getElementById('achievements-container');
     
     // Check auth state
     firebaseServices.onAuthStateChanged((user) => {
@@ -64,9 +55,11 @@ document.addEventListener('DOMContentLoaded', function() {
             firebaseServices.getUserEnrollments(userId),
             firebaseServices.getCategories(), // Also fetch categories to map IDs to names
             firebaseServices.getUserAnalytics(userId), // Fetch user analytics
-            firebaseServices.getUserRecommendationInteractions(userId) // Fetch recommendation interactions
+            firebaseServices.getUserRecommendationInteractions(userId), // Fetch recommendation interactions
+            firebaseServices.getLearningPatterns(userId), // Fetch learning patterns
+            firebaseServices.getUserEngagementScore(userId) // Fetch engagement score
         ])
-        .then(([courses, userEnrollments, categories, userAnalytics, recommendationInteractions]) => {
+        .then(([courses, userEnrollments, categories, userAnalytics, recommendationInteractions, learningPatterns, engagementScore]) => {
             // Create a map of category IDs to names
             const categoryMap = {};
             categories.forEach(category => {
@@ -95,8 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
             renderVideoAnalyticsCharts(userAnalytics);
             
             // Render learning patterns analysis
-            const learningPatterns = analyzeLearningPatterns(userAnalytics);
-            renderLearningPatterns(learningPatterns);
+            renderLearningPatterns(learningPatterns, engagementScore);
             
             // Render achievements
             firebaseServices.getUserAchievements(userId).then(achievements => {
@@ -200,60 +192,125 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Update video analytics stats
-    function updateVideoAnalyticsStats(analytics) {
-        if (!analytics || !analytics.videoDetails) {
-            // Set default values if no video analytics data
-            if (totalPlayEventsElement) totalPlayEventsElement.textContent = '0';
-            if (totalPauseEventsElement) totalPauseEventsElement.textContent = '0';
-            if (avgPlaybackSpeedElement) avgPlaybackSpeedElement.textContent = '1.0x';
-            if (totalSeekEventsElement) totalSeekEventsElement.textContent = '0';
-            if (engagementScoreElement) engagementScoreElement.textContent = '0%';
+    // Render achievements
+    function renderAchievements(achievements) {
+        if (!achievementsContainer) return;
+        
+        if (!achievements || achievements.length === 0) {
+            achievementsContainer.innerHTML = `
+                <div class="text-center py-8 col-span-full">
+                    <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <h3 class="mt-4 text-lg font-medium text-gray-900">No achievements yet</h3>
+                    <p class="mt-2 text-gray-500">Start learning to earn your first achievement!</p>
+                </div>
+            `;
             return;
         }
         
-        // Aggregate video analytics from all lessons
-        let totalPlayEvents = 0;
-        let totalPauseEvents = 0;
-        let totalSpeedChanges = 0;
-        let totalSpeedSum = 0;
-        let totalSeekEvents = 0;
-        let totalLessonsWithVideoData = 0;
-        let engagementScore = 0;
+        // Generate HTML for achievements
+        let achievementsHTML = '';
         
-        // Process video details for each course and lesson
-        Object.values(analytics.videoDetails || {}).forEach(course => {
-            Object.values(course || {}).forEach(lesson => {
-                if (lesson) {
-                    totalPlayEvents += lesson.playEvents || 0;
-                    totalPauseEvents += lesson.pauseEvents || 0;
-                    totalSeekEvents += lesson.seekEvents || 0;
-                    
-                    // Calculate average playback speed
-                    if (lesson.playbackSpeedChanges > 0) {
-                        totalSpeedChanges += lesson.playbackSpeedChanges || 0;
-                        totalSpeedSum += (lesson.maxPlaybackSpeed + lesson.minPlaybackSpeed) / 2;
-                        totalLessonsWithVideoData++;
-                    }
-                }
-            });
+        achievements.forEach(achievement => {
+            achievementsHTML += generateAchievementCardHTML(achievement);
         });
         
-        // Calculate engagement score (simplified formula)
-        // Based on play/pause ratio and seek events (fewer seeks = more engaged)
-        const playPauseRatio = totalPauseEvents > 0 ? totalPlayEvents / totalPauseEvents : totalPlayEvents;
-        const seekPenalty = Math.min(100, totalSeekEvents / 10); // Penalty for excessive seeking
-        engagementScore = Math.max(0, Math.min(100, (playPauseRatio * 10) - seekPenalty));
-        
-        // Update UI elements
-        if (totalPlayEventsElement) totalPlayEventsElement.textContent = totalPlayEvents;
-        if (totalPauseEventsElement) totalPauseEventsElement.textContent = totalPauseEvents;
-        if (avgPlaybackSpeedElement) {
-            const avgSpeed = totalLessonsWithVideoData > 0 ? (totalSpeedSum / totalLessonsWithVideoData).toFixed(1) : '1.0';
-            avgPlaybackSpeedElement.textContent = `${avgSpeed}x`;
+        achievementsContainer.innerHTML = achievementsHTML;
+    }
+    
+    // Helper function to generate achievement card HTML
+    function generateAchievementCardHTML(achievement) {
+        // Determine icon based on achievement type
+        let iconHTML = '';
+        switch (achievement.icon) {
+            case 'beginner':
+                iconHTML = `
+                    <svg class="w-12 h-12 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                `;
+                break;
+            case 'enthusiast':
+                iconHTML = `
+                    <svg class="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                `;
+                break;
+            case 'seeker':
+                iconHTML = `
+                    <svg class="w-12 h-12 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                    </svg>
+                `;
+                break;
+            case 'warrior':
+                iconHTML = `
+                    <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"></path>
+                    </svg>
+                `;
+                break;
+            case 'master':
+                iconHTML = `
+                    <svg class="w-12 h-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                    </svg>
+                `;
+                break;
+            case 'dedicated':
+                iconHTML = `
+                    <svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                `;
+                break;
+            default:
+                iconHTML = `
+                    <svg class="w-12 h-12 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                `;
         }
-        if (totalSeekEventsElement) totalSeekEventsElement.textContent = totalSeekEvents;
-        if (engagementScoreElement) engagementScoreElement.textContent = `${Math.round(engagementScore)}%`;
+        
+        // Determine card styling based on earned status
+        const cardClass = achievement.earned 
+            ? 'bg-gradient-to-br from-indigo-50 to-white border-2 border-indigo-200 shadow-md' 
+            : 'bg-gray-50 border border-gray-200 opacity-75';
+            
+        const titleClass = achievement.earned 
+            ? 'text-gray-900 font-bold' 
+            : 'text-gray-500 font-medium';
+            
+        const descriptionClass = achievement.earned 
+            ? 'text-gray-700' 
+            : 'text-gray-500';
+            
+        const statusText = achievement.earned ? 'Earned' : 'Locked';
+        const statusClass = achievement.earned 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-gray-100 text-gray-800';
+        
+        return `
+            <div class="rounded-xl p-6 transition-all duration-300 hover:shadow-lg ${cardClass}">
+                <div class="flex justify-between items-start">
+                    <div>${iconHTML}</div>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                        ${statusText}
+                    </span>
+                </div>
+                <h3 class="mt-4 text-lg ${titleClass}">${achievement.name}</h3>
+                <p class="mt-2 text-sm ${descriptionClass}">${achievement.description}</p>
+                ${!achievement.earned ? `
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <p class="text-xs text-gray-500">Unlock by completing: ${achievement.criteria.coursesCompleted || achievement.criteria.learningStreak || Math.floor((achievement.criteria.totalStudyTime || 0) / 3600) + ' hours'} ${achievement.criteria.coursesCompleted ? 'courses' : achievement.criteria.learningStreak ? 'day streak' : 'of study time'}</p>
+                    </div>
+                ` : ''}
+            </div>
+        `;
     }
     
     // Render charts
@@ -867,7 +924,7 @@ document.addEventListener('DOMContentLoaded', function() {
             categoryChartContainer.innerHTML = `
                 <div class="text-center text-gray-500">
                     <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 012-2m0 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                     <p class="mt-2">No category data available</p>
                 </div>
@@ -1189,8 +1246,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.round(((lastWeekAvg - firstWeekAvg) / firstWeekAvg) * 100);
     }
     
-    // Render learning patterns analysis
-    function renderLearningPatterns(patterns) {
+    // Enhanced render learning patterns analysis
+    function renderLearningPatterns(patterns, engagementScore) {
         const patternsContainer = document.getElementById('learning-patterns-container');
         if (!patternsContainer) return;
         
@@ -1211,6 +1268,14 @@ document.addEventListener('DOMContentLoaded', function() {
             patterns.learningVelocity < 0 ? 
             `Keep going! You can improve your learning pace.` : 
             `Consistent progress! Keep up the good work.`;
+        
+        const engagementLevel = engagementScore >= 80 ? 'Excellent' : 
+                              engagementScore >= 60 ? 'Good' : 
+                              engagementScore >= 40 ? 'Average' : 'Needs Improvement';
+        
+        const engagementColor = engagementScore >= 80 ? 'text-green-600' : 
+                              engagementScore >= 60 ? 'text-blue-600' : 
+                              engagementScore >= 40 ? 'text-amber-600' : 'text-red-600';
         
         const patternsHTML = `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1251,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 
-                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100 md:col-span-2">
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100">
                     <div class="flex items-center mb-4">
                         <div class="p-2 rounded-lg bg-green-100">
                             <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1267,6 +1332,48 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${patterns.learningVelocity >= 0 ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
                                 ${patterns.learningVelocity >= 0 ? '+' : ''}${patterns.learningVelocity}%
                             </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-xl p-6 border border-purple-100">
+                    <div class="flex items-center mb-4">
+                        <div class="p-2 rounded-lg bg-purple-100">
+                            <svg class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-900">Engagement Score</h3>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-2xl font-bold ${engagementColor}">${engagementScore}/100</p>
+                        <p class="mt-1 text-sm text-gray-600">${engagementLevel} engagement</p>
+                        <p class="mt-2 text-sm text-gray-600">Based on consistency, study time, and progress</p>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl p-6 border border-cyan-100 md:col-span-2">
+                    <div class="flex items-center mb-4">
+                        <div class="p-2 rounded-lg bg-cyan-100">
+                            <svg class="h-6 w-6 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-900">Learning Streak</h3>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <p class="text-sm text-gray-600">Current Streak</p>
+                            <p class="text-2xl font-bold text-amber-600">${patterns.currentStreak} days</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <p class="text-sm text-gray-600">Longest Streak</p>
+                            <p class="text-2xl font-bold text-green-600">${patterns.longestStreak} days</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <p class="text-sm text-gray-600">Category Focus</p>
+                            <p class="text-lg font-bold text-indigo-600">${Object.keys(patterns.categoryDistribution).length > 0 ? 
+                                Object.entries(patterns.categoryDistribution).sort((a, b) => b[1] - a[1])[0][0] : 'None'}</p>
                         </div>
                     </div>
                 </div>
