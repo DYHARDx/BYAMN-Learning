@@ -9,7 +9,6 @@ let categoryMap = {}; // Map to store category ID to name mappings
 let difficultyFilter = 'all'; // all, beginner, intermediate, advanced
 let durationFilter = 'all'; // all, short, medium, long
 let instructorFilter = 'all'; // all, specific instructors
-let priceFilter = 'all'; // all, free, paid
 
 // Intersection Observer for lazy loading images
 const imageObserver = new IntersectionObserver((entries, observer) => {
@@ -72,15 +71,15 @@ function getDurationCategory(duration) {
         const hours = parseInt(parts[0]) || 0;
         const minutes = parseInt(parts[1]) || 0;
         const totalMinutes = hours * 60 + minutes;
-        if (totalMinutes <= 120) return 'short';
-        if (totalMinutes <= 360) return 'medium';
+        if (totalMinutes <= 30) return 'short';
+        if (totalMinutes <= 90) return 'medium';
         return 'long';
     }
     
     // If duration is in minutes
     if (typeof duration === 'number') {
-        if (duration <= 120) return 'short';
-        if (duration <= 360) return 'medium';
+        if (duration <= 30) return 'short';
+        if (duration <= 90) return 'medium';
         return 'long';
     }
     
@@ -88,7 +87,7 @@ function getDurationCategory(duration) {
 }
 
 // Utility function to filter courses
-function filterCourses(courses, searchTerm, category, difficulty, duration, instructor, price) {
+function filterCourses(courses, searchTerm, category, difficulty, duration, instructor) {
     return courses.filter(course => {
         // Search term filter
         if (searchTerm) {
@@ -97,9 +96,8 @@ function filterCourses(courses, searchTerm, category, difficulty, duration, inst
             const descriptionMatch = course.description && course.description.toLowerCase().includes(searchLower);
             const instructorMatch = course.instructor && course.instructor.toLowerCase().includes(searchLower);
             const categoryMatch = categoryMap[course.category] && categoryMap[course.category].toLowerCase().includes(searchLower);
-            const languageMatch = course.language && course.language.toLowerCase().includes(searchLower);
             
-            if (!titleMatch && !descriptionMatch && !instructorMatch && !categoryMatch && !languageMatch) {
+            if (!titleMatch && !descriptionMatch && !instructorMatch && !categoryMatch) {
                 return false;
             }
         }
@@ -110,7 +108,7 @@ function filterCourses(courses, searchTerm, category, difficulty, duration, inst
         }
         
         // Difficulty filter
-        if (difficulty !== 'all' && course.difficulty && course.difficulty.toLowerCase() !== difficulty) {
+        if (difficulty !== 'all' && course.difficulty !== difficulty) {
             return false;
         }
         
@@ -125,17 +123,6 @@ function filterCourses(courses, searchTerm, category, difficulty, duration, inst
         // Instructor filter
         if (instructor !== 'all' && course.instructor !== instructor) {
             return false;
-        }
-        
-        // Price filter
-        if (price !== 'all') {
-            const isFree = !course.price || course.price === 0;
-            if (price === 'free' && !isFree) {
-                return false;
-            }
-            if (price === 'paid' && isFree) {
-                return false;
-            }
         }
         
         return true;
@@ -161,20 +148,25 @@ function sortCourses(courses, sortOption) {
                 return dateA - dateB;
             });
             break;
+        case 'titleAsc':
+            sortedCourses.sort((a, b) => {
+                const titleA = (a.title || '').toLowerCase();
+                const titleB = (b.title || '').toLowerCase();
+                return titleA.localeCompare(titleB);
+            });
+            break;
+        case 'titleDesc':
+            sortedCourses.sort((a, b) => {
+                const titleA = (a.title || '').toLowerCase();
+                const titleB = (b.title || '').toLowerCase();
+                return titleB.localeCompare(titleA);
+            });
+            break;
         case 'enrollmentAsc':
             sortedCourses.sort((a, b) => (a.enrollmentCount || 0) - (b.enrollmentCount || 0));
             break;
         case 'enrollmentDesc':
             sortedCourses.sort((a, b) => (b.enrollmentCount || 0) - (a.enrollmentCount || 0));
-            break;
-        case 'ratingDesc':
-            sortedCourses.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-            break;
-        case 'priceAsc':
-            sortedCourses.sort((a, b) => (a.price || 0) - (b.price || 0));
-            break;
-        case 'priceDesc':
-            sortedCourses.sort((a, b) => (b.price || 0) - (a.price || 0));
             break;
         default:
             // Default to newest
@@ -194,12 +186,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const categoryFilterContainer = document.getElementById('category-filters');
     const searchInput = document.getElementById('course-search');
     const sortSelect = document.getElementById('sort-options');
-    const toggleFiltersBtn = document.getElementById('toggle-filters');
-    const advancedFiltersPanel = document.getElementById('advanced-filters');
     const difficultyFilterSelect = document.getElementById('difficulty-filter');
     const durationFilterSelect = document.getElementById('duration-filter');
     const instructorFilterSelect = document.getElementById('instructor-filter');
-    const priceFilterSelect = document.getElementById('price-filter');
     const clearFiltersBtn = document.getElementById('clear-filters');
     const resultsCount = document.getElementById('results-count');
 
@@ -219,23 +208,6 @@ document.addEventListener('DOMContentLoaded', function() {
         sortSelect.addEventListener('change', function(e) {
             currentSort = e.target.value;
             applyFilters();
-        });
-    }
-
-    // Add toggle filters event listener
-    if (toggleFiltersBtn) {
-        toggleFiltersBtn.addEventListener('click', function() {
-            advancedFiltersPanel.classList.toggle('hidden');
-            const isHidden = advancedFiltersPanel.classList.contains('hidden');
-            toggleFiltersBtn.innerHTML = isHidden ? 
-                `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-                </svg>
-                Advanced Filters` :
-                `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-                Hide Filters`;
         });
     }
 
@@ -263,14 +235,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Add price filter event listener
-    if (priceFilterSelect) {
-        priceFilterSelect.addEventListener('change', function(e) {
-            priceFilter = e.target.value;
-            applyFilters();
-        });
-    }
-
     // Add clear filters event listener
     if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', function() {
@@ -280,7 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
             difficultyFilter = 'all';
             durationFilter = 'all';
             instructorFilter = 'all';
-            priceFilter = 'all';
             currentSort = 'newest';
             
             // Reset UI elements
@@ -289,7 +252,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (difficultyFilterSelect) difficultyFilterSelect.value = 'all';
             if (durationFilterSelect) durationFilterSelect.value = 'all';
             if (instructorFilterSelect) instructorFilterSelect.value = 'all';
-            if (priceFilterSelect) priceFilterSelect.value = 'all';
             
             // Update active button styling
             document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -313,8 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentFilter, 
             difficultyFilter, 
             durationFilter, 
-            instructorFilter,
-            priceFilter
+            instructorFilter
         );
         
         // Sort courses
@@ -371,6 +332,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Render instructor filters
             renderInstructorFilters(courses);
             
+            // Render difficulty filters
+            renderDifficultyFilters();
+
             // Render all courses by default
             renderCourses(courses);
 
@@ -480,6 +444,16 @@ document.addEventListener('DOMContentLoaded', function() {
             instructorFilterSelect.appendChild(option);
         });
     }
+    
+    // Render difficulty filters
+    function renderDifficultyFilters() {
+        // Difficulty filters are static, but we could enhance this in the future
+        // For now, we'll just ensure the select element exists
+        if (!difficultyFilterSelect) return;
+        
+        // The options are already in the HTML, but we could dynamically generate them if needed
+        console.log('Difficulty filters rendered');
+    }
 
     // Render courses
     function renderCourses(courses) {
@@ -511,7 +485,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     difficultyFilter = 'all';
                     durationFilter = 'all';
                     instructorFilter = 'all';
-                    priceFilter = 'all';
                     currentSort = 'newest';
                     
                     // Reset UI elements
@@ -520,7 +493,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (difficultyFilterSelect) difficultyFilterSelect.value = 'all';
                     if (durationFilterSelect) durationFilterSelect.value = 'all';
                     if (instructorFilterSelect) instructorFilterSelect.value = 'all';
-                    if (priceFilterSelect) priceFilterSelect.value = 'all';
                     
                     // Update active button styling
                     document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -557,75 +529,45 @@ document.addEventListener('DOMContentLoaded', function() {
             else if (durationCategory === 'medium') durationText += ' (Medium)';
             else if (durationCategory === 'long') durationText += ' (Long)';
             
-            // Determine badge color based on category
-            let badgeClass = 'bg-gray-100 text-gray-800';
-            if (categoryName) {
-                const category = categoryName.toLowerCase();
-                if (category.includes('web')) {
-                    badgeClass = 'bg-blue-100 text-blue-800';
-                } else if (category.includes('data')) {
-                    badgeClass = 'bg-green-100 text-green-800';
-                } else if (category.includes('design')) {
-                    badgeClass = 'bg-purple-100 text-purple-800';
-                } else if (category.includes('mobile')) {
-                    badgeClass = 'bg-amber-100 text-amber-800';
-                } else if (category.includes('business')) {
-                    badgeClass = 'bg-indigo-100 text-indigo-800';
-                }
-            }
-            
-            // Format price
-            let priceText = 'Free';
-            if (course.price && course.price > 0) {
-                priceText = `$${course.price.toFixed(2)}`;
-            }
-            
             coursesHTML += `
-                <div class="course-card">
-                    <div class="course-image-container">
-                        <img
-                            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjMiIHk9IjQiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxMyIgcng9IjIiLz48cG9seWxpbmUgcG9pbnRzPSIxIDIwIDggMTMgMTMgMTgiLz48cG9seWxpbmUgcG9pbnRzPSIyMSAyMCAxNi41IDE1LjUgMTQgMTgiLz48bGluZSB4MT0iOSIgeDI9IjkiIHkxPSI5IiB5Mj0iOSIvPjwvc3ZnPg=="
-                            data-src="${course.thumbnail || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}"
-                            alt="${course.title}"
-                            class="course-image lazy-load"
-                            loading="lazy"
-                            onerror="this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80';"
-                        >
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover-lift transition-all duration-300 course-card">
+                    <div class="h-48 overflow-hidden">
+                        <img class="w-full h-full object-cover lazy-load" data-src="${course.thumbnail || 'https://images.unsplash.com/photo-1547658719-da2b51169166?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}" alt="${course.title}" loading="lazy">
                     </div>
-                    <div class="course-card-content">
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="badge ${badgeClass}">
-                                ${categoryName}
-                            </span>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">${course.title}</h3>
+                                <p class="mt-1 text-sm text-gray-500">${categoryName} • ${course.difficulty || 'Beginner'}</p>
+                            </div>
                             <div class="flex items-center text-amber-500">
                                 <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                 </svg>
-                                <span class="ml-1 text-gray-700 font-semibold text-sm">${course.rating || '4.5'}</span>
+                                <span class="ml-1 text-gray-600">${course.rating || '4.5'}</span>
                             </div>
                         </div>
-                        <h3 class="course-card-title">${course.title}</h3>
-                        <p class="course-card-description">
-                            ${course.description || 'No description available for this course.'}
-                        </p>
-                        <div class="course-card-meta">
-                            <div class="flex flex-wrap items-center gap-2 text-gray-600 text-sm">
-                                <div class="flex items-center">
-                                    <svg class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span class="font-medium">${durationText}</span>
-                                </div>
-                                ${course.language ? `<span class="badge bg-gray-100 text-gray-800">${course.language}</span>` : ''}
-                                ${course.enrollmentCount ? `<span class="badge bg-green-100 text-green-800">${course.enrollmentCount} enrolled</span>` : ''}
-                                ${course.difficulty ? `<span class="badge bg-purple-100 text-purple-800">${course.difficulty}</span>` : ''}
-                            </div>
-                            <div class="flex items-center mt-3">
-                                <span class="course-card-price mr-3">${priceText}</span>
-                                <button class="btn btn-primary enroll-btn" data-course-id="${course.id}">
-                                    Enroll Now
-                                </button>
-                            </div>
+                        
+                        <p class="mt-3 text-gray-600 line-clamp-2">${course.description || 'No description available'}</p>
+                        
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                ${course.lessons ? course.lessons.length : 0} lessons
+                            </span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                ${durationText}
+                            </span>
+                            ${course.instructor ? `
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                ${course.instructor}
+                            </span>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="mt-6">
+                            <a href="player.html?courseId=${course.id}" class="w-full px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition duration-300 text-center inline-block">
+                                View Course
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -640,50 +582,5 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.lazy-load').forEach(img => {
             imageObserver.observe(img);
         });
-
-        // Add event listeners to enroll buttons
-        document.querySelectorAll('.enroll-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const courseId = this.getAttribute('data-course-id');
-                enrollInCourse(courseId);
-            });
-        });
-    }
-
-    // Enroll in a course
-    async function enrollInCourse(courseId) {
-        try {
-            // Get current user
-            const { auth } = firebaseServices;
-            const user = auth.currentUser;
-            if (!user) {
-                // Redirect to login page
-                window.location.href = 'auth/login.html';
-                return;
-            }
-
-            // Show loading state on button
-            const button = document.querySelector(`.enroll-btn[data-course-id="${courseId}"]`);
-            const originalText = button.textContent;
-            button.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Enrolling...';
-            button.disabled = true;
-
-            // Enroll user in course using Firebase
-            await firebaseServices.enrollUserInCourse(user.uid, courseId);
-            utils.showNotification('Successfully enrolled in course!', 'success');
-
-            // Redirect to dashboard after a short delay
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 1500);
-        } catch (error) {
-            console.error('Error enrolling in course:', error);
-            utils.showNotification('Error enrolling in course: ' + error.message, 'error');
-
-            // Reset button
-            const button = document.querySelector(`.enroll-btn[data-course-id="${courseId}"]`);
-            button.textContent = 'Enroll Now';
-            button.disabled = false;
-        }
     }
 });
