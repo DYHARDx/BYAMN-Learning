@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 studyTimeChartContainer.innerHTML = `
                     <div class="text-center text-gray-500">
                         <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm8-12a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                         <p class="mt-2">No analytics data available</p>
                     </div>
@@ -375,6 +375,248 @@ document.addEventListener('DOMContentLoaded', function() {
         if (streakChartContainer) {
             renderStreakChart(analytics);
         }
+    }
+    
+    // Render video analytics charts
+    function renderVideoAnalyticsCharts(analytics) {
+        if (!videoAnalyticsContainer) return;
+        
+        if (!analytics || !analytics.videoDetails) {
+            videoAnalyticsContainer.innerHTML = `
+                <div class="text-center text-gray-500 py-8">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <p class="mt-2">No video analytics data available yet. Watch some videos to see your engagement metrics!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Aggregate video analytics data for charts
+        const videoData = aggregateVideoAnalyticsData(analytics.videoDetails);
+        
+        // Render video analytics charts
+        renderVideoEventsChart(videoData);
+        renderPlaybackSpeedChart(videoData);
+        renderEngagementTrendChart(videoData);
+    }
+    
+    // Aggregate video analytics data for charts
+    function aggregateVideoAnalyticsData(videoDetails) {
+        const aggregated = {
+            dailyEvents: {}, // Play/pause events by date
+            speedDistribution: {}, // Playback speed usage
+            engagementTrend: {}, // Engagement score over time
+            lessonEngagement: [] // Engagement by lesson
+        };
+        
+        // Process video details for each course and lesson
+        Object.entries(videoDetails || {}).forEach(([courseId, course]) => {
+            Object.entries(course || {}).forEach(([lessonId, lesson]) => {
+                if (lesson && lesson.lastUpdated) {
+                    const date = lesson.lastUpdated.split('T')[0]; // Extract date part
+                    
+                    // Aggregate daily events
+                    if (!aggregated.dailyEvents[date]) {
+                        aggregated.dailyEvents[date] = { playEvents: 0, pauseEvents: 0, seekEvents: 0 };
+                    }
+                    aggregated.dailyEvents[date].playEvents += lesson.playEvents || 0;
+                    aggregated.dailyEvents[date].pauseEvents += lesson.pauseEvents || 0;
+                    aggregated.dailyEvents[date].seekEvents += lesson.seekEvents || 0;
+                    
+                    // Aggregate speed distribution
+                    const avgSpeed = lesson.playbackSpeedChanges > 0 ? 
+                        (lesson.maxPlaybackSpeed + lesson.minPlaybackSpeed) / 2 : 1.0;
+                    const speedKey = `${Math.floor(avgSpeed * 2) / 2}x`; // Round to nearest 0.5x
+                    aggregated.speedDistribution[speedKey] = (aggregated.speedDistribution[speedKey] || 0) + 1;
+                    
+                    // Calculate engagement for this lesson
+                    const playPauseRatio = (lesson.pauseEvents || 0) > 0 ? 
+                        (lesson.playEvents || 0) / (lesson.pauseEvents || 0) : (lesson.playEvents || 0);
+                    const seekPenalty = Math.min(100, (lesson.seekEvents || 0) / 10);
+                    const engagement = Math.max(0, Math.min(100, (playPauseRatio * 10) - seekPenalty));
+                    
+                    aggregated.lessonEngagement.push({
+                        lessonId,
+                        engagement: Math.round(engagement),
+                        playEvents: lesson.playEvents || 0,
+                        pauseEvents: lesson.pauseEvents || 0
+                    });
+                }
+            });
+        });
+        
+        return aggregated;
+    }
+    
+    // Render video events chart
+    function renderVideoEventsChart(videoData) {
+        const eventsChartContainer = document.getElementById('video-events-chart');
+        if (!eventsChartContainer) return;
+        
+        const dates = Object.keys(videoData.dailyEvents).sort().slice(-14); // Last 14 days
+        if (dates.length === 0) {
+            eventsChartContainer.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <p class="mt-2">No video events data available</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Prepare data for chart
+        const playEvents = dates.map(date => videoData.dailyEvents[date].playEvents || 0);
+        const pauseEvents = dates.map(date => videoData.dailyEvents[date].pauseEvents || 0);
+        const maxEvents = Math.max(...playEvents, ...pauseEvents, 1);
+        
+        // Generate chart HTML
+        const chartHTML = `
+            <div class="w-full h-full flex flex-col">
+                <div class="flex items-end flex-1 space-x-1 md:space-x-2 px-2 py-4">
+                    ${dates.map((date, index) => {
+                        const playHeight = Math.max(5, (playEvents[index] / maxEvents) * 100);
+                        const pauseHeight = Math.max(5, (pauseEvents[index] / maxEvents) * 100);
+                        const day = new Date(date).getDate();
+                        
+                        return `
+                            <div class="flex flex-col items-center flex-1 group min-w-[25px]">
+                                <div class="flex items-end justify-center w-full space-x-px">
+                                    <div class="w-1/2 bg-blue-500 rounded-t transition-all duration-700 ease-out" 
+                                         style="height: ${playHeight}%" title="Play events: ${playEvents[index]}">
+                                    </div>
+                                    <div class="w-1/2 bg-amber-500 rounded-t transition-all duration-700 ease-out" 
+                                         style="height: ${pauseHeight}%" title="Pause events: ${pauseEvents[index]}">
+                                    </div>
+                                </div>
+                                <div class="text-xs text-gray-600 mt-1 text-center font-semibold">${day}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                
+                <div class="mt-4 md:mt-6 text-center">
+                    <p class="text-sm text-gray-600 font-medium">Video Events (Last 14 Days)</p>
+                    <div class="flex justify-center mt-2 space-x-4">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-blue-500 rounded mr-1"></div>
+                            <span class="text-xs text-gray-600">Play Events</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-amber-500 rounded mr-1"></div>
+                            <span class="text-xs text-gray-600">Pause Events</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        eventsChartContainer.innerHTML = chartHTML;
+    }
+    
+    // Render playback speed chart
+    function renderPlaybackSpeedChart(videoData) {
+        const speedChartContainer = document.getElementById('playback-speed-chart');
+        if (!speedChartContainer) return;
+        
+        const speeds = Object.keys(videoData.speedDistribution).sort();
+        if (speeds.length === 0) {
+            speedChartContainer.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="mt-2">No playback speed data available</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Prepare data for chart
+        const counts = speeds.map(speed => videoData.speedDistribution[speed]);
+        const maxCount = Math.max(...counts, 1);
+        
+        // Generate chart HTML
+        const chartHTML = `
+            <div class="w-full h-full flex flex-col">
+                <div class="flex items-end flex-1 space-x-2 md:space-x-3 px-2 py-4">
+                    ${speeds.map((speed, index) => {
+                        const heightPercent = Math.max(10, (counts[index] / maxCount) * 100);
+                        
+                        return `
+                            <div class="flex flex-col items-center flex-1 group min-w-[40px]">
+                                <div class="text-xs text-gray-500 mb-1 font-bold">${counts[index]}</div>
+                                <div class="w-3/4 md:w-3/4 bg-gradient-to-t from-purple-500 to-indigo-600 rounded-t-lg transition-all duration-700 ease-out hover:opacity-90 hover:shadow-lg transform hover:-translate-y-1" 
+                                     style="height: ${heightPercent}%">
+                                </div>
+                                <div class="text-xs text-gray-600 mt-2 text-center truncate w-full px-1 font-semibold">${speed}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                
+                <div class="mt-4 md:mt-6 text-center">
+                    <p class="text-sm text-gray-600 font-medium">Playback Speed Distribution</p>
+                </div>
+            </div>
+        `;
+        
+        speedChartContainer.innerHTML = chartHTML;
+    }
+    
+    // Render engagement trend chart
+    function renderEngagementTrendChart(videoData) {
+        const trendChartContainer = document.getElementById('engagement-trend-chart');
+        if (!trendChartContainer) return;
+        
+        // Sort lessons by engagement
+        const sortedLessons = [...videoData.lessonEngagement].sort((a, b) => b.engagement - a.engagement).slice(0, 10);
+        if (sortedLessons.length === 0) {
+            trendChartContainer.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <p class="mt-2">No engagement data available</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Prepare data for chart
+        const engagements = sortedLessons.map(lesson => lesson.engagement);
+        const maxEngagement = Math.max(...engagements, 1);
+        
+        // Generate chart HTML
+        const chartHTML = `
+            <div class="w-full h-full flex flex-col">
+                <div class="flex items-end flex-1 space-x-1 md:space-x-2 px-2 py-4">
+                    ${sortedLessons.map((lesson, index) => {
+                        const heightPercent = Math.max(5, (engagements[index] / maxEngagement) * 100);
+                        const lessonLabel = `L${index + 1}`; // Simplified label
+                        
+                        return `
+                            <div class="flex flex-col items-center flex-1 group min-w-[20px]">
+                                <div class="text-xs text-gray-500 mb-1 font-bold">${engagements[index]}%</div>
+                                <div class="w-full bg-gradient-to-t from-green-500 to-emerald-600 rounded-t-lg transition-all duration-700 ease-out hover:opacity-90 hover:shadow-lg transform hover:-translate-y-1" 
+                                     style="height: ${heightPercent}%">
+                                </div>
+                                <div class="text-xs text-gray-600 mt-1 text-center font-semibold truncate" title="Lesson ID: ${lesson.lessonId}">${lessonLabel}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                
+                <div class="mt-4 md:mt-6 text-center">
+                    <p class="text-sm text-gray-600 font-medium">Top Lessons by Engagement</p>
+                </div>
+            </div>
+        `;
+        
+        trendChartContainer.innerHTML = chartHTML;
     }
     
     // Render progress distribution chart
@@ -1142,7 +1384,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Render recommendations
-    function renderRecommendations(recommendations) {
+    function renderRecommendations(recommendations, userAnalytics) {
         const recommendationsContainer = document.getElementById('recommendations-container');
         if (!recommendationsContainer) return;
         
@@ -1152,7 +1394,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
-                    <p class="mt-2">No recommendations available at the moment</p>
+                    <p class="mt-2">No recommendations available at the moment. Complete some courses to get personalized suggestions!</p>
                 </div>
             `;
             return;
@@ -1160,7 +1402,43 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let recommendationsHTML = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">';
         
-        recommendations.slice(0, 3).forEach(course => {
+        recommendations.forEach((course, index) => {
+            // Determine recommendation reason
+            let reason = "Based on popular courses";
+            let reasonIcon = "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z";
+            
+            if (userAnalytics && userAnalytics.favoriteCategories && course.category) {
+                const favoriteCategories = userAnalytics.favoriteCategories;
+                if (favoriteCategories[course.category]) {
+                    reason = `Based on your interest in ${course.category}`;
+                    reasonIcon = "M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z";
+                }
+            }
+            
+            // Check if this is a trending recommendation
+            if (course.createdAt) {
+                const createdDate = getNormalizedDate(course.createdAt);
+                const daysSinceCreation = (new Date() - createdDate) / (1000 * 60 * 60 * 24);
+                if (daysSinceCreation < 14) {
+                    reason = "New & Trending";
+                    reasonIcon = "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z";
+                }
+            }
+            
+            // Check if this is a completion suggestion
+            if (course.lessons && Array.isArray(course.lessons)) {
+                const totalDuration = course.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+                if (totalDuration > 3600 && totalDuration < 21600) { // 1-6 hours
+                    reason = "Perfect for completion";
+                    reasonIcon = "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z";
+                }
+            }
+            
+            // Add special badge for top recommendations
+            const topBadge = index < 2 ? 
+                '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 border border-amber-200 mb-2">Top Recommendation</span>' : 
+                '';
+            
             recommendationsHTML += `
                 <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300">
                     <div class="h-32 overflow-hidden">
@@ -1172,6 +1450,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         >
                     </div>
                     <div class="p-5">
+                        ${topBadge}
                         <h3 class="font-bold text-gray-900 line-clamp-2">${course.title}</h3>
                         <p class="mt-2 text-sm text-gray-600 line-clamp-2">${course.description || 'No description available'}</p>
                         <div class="mt-4 flex justify-between items-center">
@@ -1184,6 +1463,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             >
                                 Explore
                             </a>
+                        </div>
+                        <div class="mt-3 text-xs text-gray-500 flex items-start">
+                            <svg class="h-4 w-4 mr-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${reasonIcon}" />
+                            </svg>
+                            <span>${reason}</span>
                         </div>
                     </div>
                 </div>
@@ -1237,7 +1522,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Get course recommendations based on user analytics and enrollments
-    function getCourseRecommendations(enrollments, courses, analytics) {
+    function getCourseRecommendations(enrollments, courses, analytics, interactions) {
         if (!courses || !analytics) return [];
         
         // Get user's favorite categories
@@ -1255,13 +1540,28 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get all enrolled course IDs
         const enrolledCourseIds = [...completedCourseIds, ...inProgressCourseIds];
         
-        // Score courses based on relevance
+        // Get user's previous recommendation interactions
+        const clickedRecommendations = interactions
+            .filter(i => i.action === 'click')
+            .map(i => i.courseId) || [];
+            
+        const ignoredRecommendations = interactions
+            .filter(i => i.action === 'view')
+            .map(i => i.courseId) || [];
+        
+        // Score courses based on relevance with enhanced algorithm
         const scoredCourses = courses.map(course => {
             let score = 0;
+            const courseId = course.id;
+            
+            // Skip courses that are already enrolled in
+            if (enrolledCourseIds.includes(courseId)) {
+                return { ...course, score: -1 }; // Effectively exclude
+            }
             
             // Boost score for courses in favorite categories
             if (course.category && favoriteCategories[course.category]) {
-                score += favoriteCategories[course.category] * 10;
+                score += favoriteCategories[course.category] * 15;
             }
             
             // Boost score for courses with higher difficulty if user is progressing well
@@ -1272,23 +1572,63 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Boost score for courses with good ratings
-            if (course.rating && course.rating >= 4.5) {
-                score += course.rating * 2;
+            if (course.rating && course.rating >= 4.0) {
+                score += course.rating * 3;
             }
             
             // Boost score for popular courses
-            if (course.enrollmentCount && course.enrollmentCount > 100) {
-                score += 5;
+            if (course.enrollmentCount && course.enrollmentCount > 50) {
+                score += Math.log(course.enrollmentCount) * 2; // Logarithmic scaling
             }
             
-            // Penalize courses that are already enrolled in
-            if (enrolledCourseIds.includes(course.id)) {
-                score -= 100; // Effectively exclude
+            // Boost score for courses with completion-friendly durations
+            if (course.lessons && Array.isArray(course.lessons)) {
+                const totalDuration = course.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+                // Prefer courses with moderate durations (1-6 hours)
+                if (totalDuration > 3600 && totalDuration < 21600) { // Between 1-6 hours
+                    score += 8;
+                } else if (totalDuration > 0) {
+                    // Still give some points for shorter courses
+                    score += 3;
+                }
+            }
+            
+            // Boost score for trending courses (recently popular)
+            if (course.createdAt) {
+                const createdDate = getNormalizedDate(course.createdAt);
+                const daysSinceCreation = (new Date() - createdDate) / (1000 * 60 * 60 * 24);
+                // Boost for courses created in the last 30 days
+                if (daysSinceCreation < 30) {
+                    score += Math.max(0, 10 - (daysSinceCreation / 3));
+                }
+            }
+            
+            // Penalize courses that user has seen but not clicked
+            if (ignoredRecommendations.includes(courseId) && !clickedRecommendations.includes(courseId)) {
+                score -= 5;
+            }
+            
+            // Boost courses that are similar to recently completed courses
+            if (completedCourseIds.length > 0) {
+                const recentCompleted = completedCourseIds.slice(-3); // Last 3 completed
+                const recentCourses = courses.filter(c => recentCompleted.includes(c.id));
+                
+                // Check for category similarity
+                recentCourses.forEach(recentCourse => {
+                    if (recentCourse.category === course.category) {
+                        score += 7;
+                    }
+                });
+            }
+            
+            // Boost for courses in categories the user has interacted with
+            if (Object.keys(favoriteCategories).length > 0) {
+                score += 3;
             }
             
             return {
                 ...course,
-                score: score
+                score: Math.max(0, score) // Ensure non-negative score
             };
         });
         
@@ -1298,4 +1638,5 @@ document.addEventListener('DOMContentLoaded', function() {
             .sort((a, b) => b.score - a.score)
             .slice(0, 6); // Return top 6 recommendations
     }
+    
 });

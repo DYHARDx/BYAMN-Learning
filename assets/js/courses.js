@@ -382,9 +382,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Populate language filter with available languages
-            populateLanguageFilter();
-
             // Render category filters
             renderCategoryFilters(categories);
             
@@ -429,26 +426,273 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Populate language filter with available languages
-    async function populateLanguageFilter() {
-        const languageFilter = document.getElementById('language-filter');
-        if (!languageFilter) return;
+    // Load personalized recommendations for logged-in users
+    async function loadRecommendations(userId, courses, categories) {
+        if (!recommendationsSection || !recommendationsContainer) return;
 
         try {
-            const languages = await firebaseServices.getAvailableLanguages();
-            
-            // Clear existing options except the first one
-            languageFilter.innerHTML = '<option value="all">All Languages</option>';
-            
-            // Add available languages
-            languages.forEach(language => {
-                const option = document.createElement('option');
-                option.value = language;
-                option.textContent = language;
-                languageFilter.appendChild(option);
-            });
+            // Show recommendations section
+            recommendationsSection.style.display = 'block';
+
+            // Fetch user data for recommendations
+            const [enrollments, analytics, interactions] = await Promise.all([
+                firebaseServices.getUserEnrollments(userId),
+                firebaseServices.getUserAnalytics(userId),
+                firebaseServices.getUserRecommendationInteractions(userId)
+            ]);
+
+            // Get personalized recommendations
+            const recommendations = getPersonalizedRecommendations(
+                enrollments, 
+                courses, 
+                analytics, 
+                interactions
+            );
+
+            // Render recommendations
+            renderRecommendations(recommendations, userId);
         } catch (error) {
-            console.error('Error populating language filter:', error);
+            console.error('Error loading recommendations:', error);
+            // Hide recommendations section on error
+            recommendationsSection.style.display = 'none';
+        }
+    }
+
+    // Get personalized course recommendations
+    function getPersonalizedRecommendations(enrollments, courses, analytics, interactions) {
+        if (!courses || courses.length === 0) return [];
+
+        // Get user's favorite categories from analytics
+        const favoriteCategories = analytics?.favoriteCategories || {};
+        
+        // Get completed and in-progress courses
+        const completedCourseIds = enrollments
+            .filter(e => e.progress === 100)
+            .map(e => e.courseId) || [];
+        
+        const inProgressCourseIds = enrollments
+            .filter(e => e.progress > 0 && e.progress < 100)
+            .map(e => e.courseId) || [];
+        
+        // Get all enrolled course IDs
+        const enrolledCourseIds = [...completedCourseIds, ...inProgressCourseIds];
+        
+        // Get user's previous recommendation interactions
+        const clickedRecommendations = interactions
+            .filter(i => i.action === 'click')
+            .map(i => i.courseId) || [];
+            
+        const ignoredRecommendations = interactions
+            .filter(i => i.action === 'view')
+            .map(i => i.courseId) || [];
+
+        // Score courses based on multiple factors
+        const scoredCourses = courses.map(course => {
+            let score = 0;
+            const courseId = course.id;
+            
+            // Skip courses that are already enrolled in
+            if (enrolledCourseIds.includes(courseId)) {
+                return { ...course, score: -1 }; // Effectively exclude
+            }
+            
+            // Boost score for courses in favorite categories
+            if (course.category && favoriteCategories[course.category]) {
+                score += favoriteCategories[course.category] * 15;
+            }
+            
+            // Boost score for courses with good ratings
+            if (course.rating && course.rating >= 4.0) {
+                score += course.rating * 3;
+            }
+            
+            // Boost score for popular courses
+            if (course.enrollmentCount && course.enrollmentCount > 50) {
+                score += Math.log(course.enrollmentCount) * 2; // Logarithmic scaling
+            }
+            
+            // Boost score for courses with completion-friendly durations
+            if (course.lessons && Array.isArray(course.lessons)) {
+                const totalDuration = course.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+                // Prefer courses with moderate durations (1-6 hours)
+                if (totalDuration > 3600 && totalDuration < 21600) {
+                    score += 8;
+                } else if (totalDuration > 0) {
+                    // Still give some points for shorter courses
+                    score += 3;
+                }
+            }
+            
+            // Boost score for courses with higher difficulty if user is progressing well
+            if (analytics?.learningVelocity > 0 && course.difficulty) {
+                const difficultyBoost = course.difficulty === 'Advanced' ? 12 : 
+                                     course.difficulty === 'Intermediate' ? 8 : 4;
+                score += difficultyBoost;
+            }
+            
+            // Boost score for trending courses (recently popular)
+            if (course.createdAt) {
+                const createdDate = getNormalizedDate(course.createdAt);
+                const daysSinceCreation = (new Date() - createdDate) / (1000 * 60 * 60 * 24);
+                // Boost for courses created in the last 30 days
+                if (daysSinceCreation < 30) {
+                    score += Math.max(0, 10 - (daysSinceCreation / 3));
+                }
+            }
+            
+            // Penalize courses that user has seen but not clicked
+            if (ignoredRecommendations.includes(courseId) && !clickedRecommendations.includes(courseId)) {
+                score -= 5;
+            }
+            
+            // Boost courses that are similar to recently completed courses
+            if (completedCourseIds.length > 0) {
+                const recentCompleted = completedCourseIds.slice(-3); // Last 3 completed
+                const recentCourses = courses.filter(c => recentCompleted.includes(c.id));
+                
+                // Check for category similarity
+                recentCourses.forEach(recentCourse => {
+                    if (recentCourse.category === course.category) {
+                        score += 7;
+                    }
+                });
+            }
+            
+            return {
+                ...course,
+                score: Math.max(0, score) // Ensure non-negative score
+            };
+        });
+        
+        // Filter out courses with negative scores and sort by score
+        return scoredCourses
+            .filter(course => course.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 6); // Return top 6 recommendations
+    }
+
+    // Render personalized recommendations
+    function renderRecommendations(recommendations, userId) {
+        if (!recommendationsContainer) return;
+
+        if (!recommendations || recommendations.length === 0) {
+            recommendationsContainer.innerHTML = `
+                <div class="col-span-full text-center py-8">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    <h3 class="mt-4 text-lg font-medium text-gray-900">No personalized recommendations</h3>
+                    <p class="mt-2 text-gray-500">Complete some courses to get personalized suggestions.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let recommendationsHTML = '';
+        recommendations.forEach((course, index) => {
+            // Get category name, mapping from ID if necessary
+            let categoryName = 'General';
+            if (course.category) {
+                categoryName = categoryMap[course.category] || course.category;
+            }
+
+            // Determine badge color based on category
+            let badgeClass = 'bg-indigo-100 text-indigo-800';
+            if (categoryName) {
+                const category = categoryName.toLowerCase();
+                if (category.includes('web')) {
+                    badgeClass = 'bg-blue-100 text-blue-800';
+                } else if (category.includes('data')) {
+                    badgeClass = 'bg-green-100 text-green-800';
+                } else if (category.includes('design')) {
+                    badgeClass = 'bg-purple-100 text-purple-800';
+                } else if (category.includes('mobile')) {
+                    badgeClass = 'bg-amber-100 text-amber-800';
+                } else if (category.includes('business')) {
+                    badgeClass = 'bg-indigo-100 text-indigo-800';
+                } else {
+                    badgeClass = 'bg-gray-100 text-gray-800';
+                }
+            }
+
+            // Calculate average duration of lessons
+            let totalDuration = 0;
+            if (course.lessons && Array.isArray(course.lessons)) {
+                totalDuration = course.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+            }
+
+            recommendationsHTML += `
+                <div class="course-card recommendation-card" data-course-id="${course.id}">
+                    <div class="course-image-container">
+                        <img
+                            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjMiIHk9IjQiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxMyIgcng9IjIiLz48cG9seWxpbmUgcG9pbnRzPSIxIDIwIDggMTMgMTMgMTgiLz48cG9seWxpbmUgcG9pbnRzPSIyMSAyMCAxNi41IDE1LjUgMTQgMTgiLz48bGluZSB4MT0iOSIgeDI9IjkiIHkxPSI5IiB5Mj0iOSIvPjwvc3ZnPg=="
+                            data-src="${course.thumbnail || 'https://placehold.co/400x200/6366f1/white?text=Course'}"
+                            alt="${course.title}"
+                            class="course-image lazy-load"
+                            loading="lazy"
+                            onerror="this.src='https://placehold.co/400x200/6366f1/white?text=Course';"
+                        >
+                    </div>
+                    <div class="course-card-content">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="badge ${badgeClass}">
+                                ${categoryName}
+                            </span>
+                            ${index < 2 ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 border border-amber-200">Recommended</span>' : ''}
+                        </div>
+                        <h3 class="course-card-title">${course.title}</h3>
+                        <p class="course-card-description">
+                            ${course.description || 'No description available for this course.'}
+                        </p>
+                        <div class="course-card-meta">
+                            <div class="flex items-center text-gray-600 text-sm">
+                                <svg class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="font-medium">${formatDuration(Math.ceil(totalDuration)) || '0m 0s'}</span>
+                                ${course.enrollmentCount ? `<span class="ml-3 badge bg-green-100 text-green-800">${course.enrollmentCount} enrolled</span>` : ''}
+                            </div>
+                            <button class="btn btn-primary enroll-btn" data-course-id="${course.id}">
+                                Enroll Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        recommendationsContainer.innerHTML = recommendationsHTML;
+
+        // Add event listeners to recommendation cards for tracking
+        document.querySelectorAll('.recommendation-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Only track if clicking on the card itself, not on buttons/links
+                if (e.target.classList.contains('enroll-btn')) return;
+                
+                const courseId = this.getAttribute('data-course-id');
+                if (userId && courseId) {
+                    firebaseServices.trackRecommendationInteraction(userId, courseId, 'click');
+                }
+            });
+        });
+
+        // Add event listeners to enroll buttons
+        document.querySelectorAll('.enroll-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const courseId = this.getAttribute('data-course-id');
+                if (userId && courseId) {
+                    // Track enrollment from recommendation
+                    firebaseServices.trackRecommendationInteraction(userId, courseId, 'enroll');
+                }
+                enrollInCourse(courseId);
+            });
+        });
+
+        // Track recommendation views
+        if (userId) {
+            recommendations.forEach(course => {
+                firebaseServices.trackRecommendationInteraction(userId, course.id, 'view');
+            });
         }
     }
 
