@@ -12,11 +12,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressChartContainer = document.getElementById('progress-chart-container');
     const categoryChartContainer = document.getElementById('category-chart-container');
     
+    // Tab switching functionality
+    let currentUserId = null;
+    
     // Check auth state
     firebaseServices.onAuthStateChanged((user) => {
         if (user) {
             // User is signed in
             console.log('User is signed in:', user);
+            currentUserId = user.uid;
             
             // Update user name in header
             if (userNameElement) {
@@ -454,7 +458,378 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
     
-
+    // Tab switching functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetTab = this.id.replace('tab-', 'content-');
+            
+            // Update active tab button
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active', 'text-indigo-600', 'border-indigo-600');
+                btn.classList.add('text-gray-500', 'border-transparent');
+            });
+            this.classList.add('active', 'text-indigo-600', 'border-indigo-600');
+            this.classList.remove('text-gray-500', 'border-transparent');
+            
+            // Show/hide tab content
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(targetTab).classList.remove('hidden');
+            
+            // Load data for the active tab
+            if (targetTab === 'content-certificates' && currentUserId) {
+                loadCertificates(currentUserId);
+            } else if (targetTab === 'content-internships' && currentUserId) {
+                loadInternships(currentUserId);
+            }
+        });
+    });
+    
+    // Helper function to format date string
+    function formatDateString(dateString) {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        } catch (e) {
+            return dateString;
+        }
+    }
+    
+    // Load certificates
+    function loadCertificates(userId) {
+        const certificatesContainer = document.getElementById('certificates-container');
+        certificatesContainer.innerHTML = '<div class="text-center py-12 col-span-full"><svg class="animate-spin mx-auto h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="mt-4 text-gray-600">Loading certificates...</p></div>';
+        
+        Promise.all([
+            firebaseServices.getCourses(),
+            firebaseServices.getUserEnrollments(userId)
+        ])
+        .then(([courses, enrollments]) => {
+            const completedEnrollments = enrollments.filter(e => e.progress === 100);
+            
+            if (completedEnrollments.length === 0) {
+                certificatesContainer.innerHTML = `
+                    <div class="text-center py-12 col-span-full">
+                        <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                        <h3 class="mt-4 text-lg font-medium text-gray-900">No certificates yet</h3>
+                        <p class="mt-2 text-gray-500">Complete courses to earn certificates</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let certificatesHTML = '';
+            completedEnrollments.forEach(enrollment => {
+                const course = courses.find(c => c.id === enrollment.courseId);
+                if (course) {
+                    const completionDate = enrollment.completedAt || enrollment.enrolledAt || new Date().toISOString();
+                    certificatesHTML += `
+                        <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-200">
+                            <div class="p-6">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex-1">
+                                        <h3 class="text-xl font-bold text-gray-900 mb-2">${course.title}</h3>
+                                        <p class="text-sm text-gray-500">Completed on ${formatDateString(completionDate)}</p>
+                                    </div>
+                                    <div class="ml-4">
+                                        <svg class="w-12 h-12 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                ${enrollment.certificateId ? `
+                                    <p class="text-xs text-gray-400 mb-4">Certificate ID: ${enrollment.certificateId}</p>
+                                ` : ''}
+                                <div class="flex space-x-3 mt-4">
+                                    <a href="certificate.html?courseId=${course.id}" class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-center rounded-md font-medium transition duration-300">
+                                        View Certificate
+                                    </a>
+                                    <a href="verification.html?certId=${enrollment.certificateId || ''}" class="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-md font-medium transition duration-300">
+                                        Verify
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            certificatesContainer.innerHTML = certificatesHTML;
+        })
+        .catch((error) => {
+            console.error('Error loading certificates:', error);
+            utils.showNotification('Error loading certificates: ' + error.message, 'error');
+        });
+    }
+    
+    // Load internships
+    function loadInternships(userId) {
+        const internshipsContainer = document.getElementById('internships-container');
+        internshipsContainer.innerHTML = '<div class="text-center py-12"><svg class="animate-spin mx-auto h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="mt-4 text-gray-600">Loading internships...</p></div>';
+        
+        firebaseServices.getUserInternships(userId)
+        .then((internships) => {
+            if (internships.length === 0) {
+                internshipsContainer.innerHTML = `
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <h3 class="mt-4 text-lg font-medium text-gray-900">No internships yet</h3>
+                        <p class="mt-2 text-gray-500">Add your internship experiences to showcase your achievements</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let internshipsHTML = '';
+            internships.forEach(internship => {
+                const startDate = new Date(internship.startDate);
+                const endDate = internship.endDate ? new Date(internship.endDate) : null;
+                const isCurrent = internship.isCurrent || false;
+                const isVerified = internship.verified || false;
+                
+                internshipsHTML += `
+                    <div class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-all duration-300 border border-gray-200">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold text-gray-900 mb-1">${internship.position}</h3>
+                                <p class="text-lg text-gray-700 font-medium">${internship.company}</p>
+                                <p class="text-sm text-gray-500 mt-1">${internship.location || 'Location not specified'}</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                ${isVerified ? `
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Verified
+                                    </span>
+                                ` : ''}
+                                ${isCurrent ? `
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        Current
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600">
+                                ${formatDateString(internship.startDate)} - ${isCurrent ? 'Present' : (endDate ? formatDateString(internship.endDate) : 'Ongoing')}
+                            </p>
+                        </div>
+                        ${internship.description ? `
+                            <p class="text-gray-600 mb-4">${internship.description}</p>
+                        ` : ''}
+                        ${internship.skills ? `
+                            <div class="mb-4">
+                                <p class="text-sm font-medium text-gray-700 mb-2">Skills:</p>
+                                <div class="flex flex-wrap gap-2">
+                                    ${internship.skills.split(',').map(skill => `
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                            ${skill.trim()}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        <div class="flex space-x-3 mt-4">
+                            <button onclick="editInternship('${internship.id}')" class="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-md font-medium transition duration-300">
+                                Edit
+                            </button>
+                            <button onclick="deleteInternship('${internship.id}')" class="px-4 py-2 border border-red-300 text-red-700 hover:bg-red-50 rounded-md font-medium transition duration-300">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            internshipsContainer.innerHTML = internshipsHTML;
+        })
+        .catch((error) => {
+            console.error('Error loading internships:', error);
+            utils.showNotification('Error loading internships: ' + error.message, 'error');
+        });
+    }
+    
+    // Internship modal functions
+    const internshipModal = document.getElementById('internship-modal');
+    const internshipForm = document.getElementById('internship-form');
+    const addInternshipBtn = document.getElementById('add-internship-btn');
+    const closeInternshipModal = document.getElementById('close-internship-modal');
+    const cancelInternshipBtn = document.getElementById('cancel-internship-btn');
+    
+    function openInternshipModal(internshipId = null) {
+        const modalTitle = document.getElementById('internship-modal-title');
+        const form = document.getElementById('internship-form');
+        const endDateContainer = document.getElementById('end-date-container');
+        
+        if (internshipId) {
+            modalTitle.textContent = 'Edit Internship';
+            // Load internship data
+            firebaseServices.getUserInternships(currentUserId)
+                .then((internships) => {
+                    const internship = internships.find(i => i.id === internshipId);
+                    if (internship) {
+                        document.getElementById('internship-id').value = internship.id;
+                        document.getElementById('internship-company').value = internship.company || '';
+                        document.getElementById('internship-position').value = internship.position || '';
+                        document.getElementById('internship-start-date').value = internship.startDate ? internship.startDate.split('T')[0] : '';
+                        document.getElementById('internship-end-date').value = internship.endDate ? internship.endDate.split('T')[0] : '';
+                        document.getElementById('internship-location').value = internship.location || '';
+                        document.getElementById('internship-description').value = internship.description || '';
+                        document.getElementById('internship-skills').value = internship.skills || '';
+                        const isCurrent = internship.isCurrent || false;
+                        document.getElementById('internship-current').checked = isCurrent;
+                        document.getElementById('internship-verified').checked = internship.verified || false;
+                        
+                        // Show/hide end date based on current status
+                        if (endDateContainer) {
+                            endDateContainer.style.display = isCurrent ? 'none' : 'block';
+                        }
+                    }
+                });
+        } else {
+            modalTitle.textContent = 'Add Internship';
+            form.reset();
+            document.getElementById('internship-id').value = '';
+            if (endDateContainer) {
+                endDateContainer.style.display = 'block';
+            }
+        }
+        
+        internshipModal.classList.remove('hidden');
+    }
+    
+    function closeModal() {
+        if (internshipModal) {
+            internshipModal.classList.add('hidden');
+        }
+        if (internshipForm) {
+            internshipForm.reset();
+        }
+    }
+    
+    // Close modal when clicking outside
+    if (internshipModal) {
+        internshipModal.addEventListener('click', function(e) {
+            if (e.target === internshipModal) {
+                closeModal();
+            }
+        });
+    }
+    
+    if (addInternshipBtn) {
+        addInternshipBtn.addEventListener('click', () => openInternshipModal());
+    }
+    
+    if (closeInternshipModal) {
+        closeInternshipModal.addEventListener('click', closeModal);
+    }
+    
+    if (cancelInternshipBtn) {
+        cancelInternshipBtn.addEventListener('click', closeModal);
+    }
+    
+    // Handle "current" checkbox to show/hide end date
+    const internshipCurrentCheckbox = document.getElementById('internship-current');
+    const endDateContainer = document.getElementById('end-date-container');
+    if (internshipCurrentCheckbox && endDateContainer) {
+        internshipCurrentCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                endDateContainer.style.display = 'none';
+                document.getElementById('internship-end-date').value = '';
+            } else {
+                endDateContainer.style.display = 'block';
+            }
+        });
+    }
+    
+    // Handle internship form submission
+    if (internshipForm) {
+        internshipForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const internshipId = document.getElementById('internship-id').value;
+            const internshipData = {
+                company: document.getElementById('internship-company').value,
+                position: document.getElementById('internship-position').value,
+                startDate: document.getElementById('internship-start-date').value,
+                endDate: document.getElementById('internship-end-date').value || null,
+                location: document.getElementById('internship-location').value || null,
+                description: document.getElementById('internship-description').value || null,
+                skills: document.getElementById('internship-skills').value || null,
+                isCurrent: document.getElementById('internship-current').checked,
+                verified: document.getElementById('internship-verified').checked
+            };
+            
+            const submitBtn = internshipForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Saving...';
+            submitBtn.disabled = true;
+            
+            if (internshipId) {
+                // Update existing internship
+                firebaseServices.updateInternship(internshipId, currentUserId, internshipData)
+                    .then(() => {
+                        utils.showNotification('Internship updated successfully!', 'success');
+                        closeModal();
+                        loadInternships(currentUserId);
+                    })
+                    .catch((error) => {
+                        console.error('Error updating internship:', error);
+                        utils.showNotification('Error updating internship: ' + error.message, 'error');
+                    })
+                    .finally(() => {
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                    });
+            } else {
+                // Add new internship
+                firebaseServices.addInternship(currentUserId, internshipData)
+                    .then(() => {
+                        utils.showNotification('Internship added successfully!', 'success');
+                        closeModal();
+                        loadInternships(currentUserId);
+                    })
+                    .catch((error) => {
+                        console.error('Error adding internship:', error);
+                        utils.showNotification('Error adding internship: ' + error.message, 'error');
+                    })
+                    .finally(() => {
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                    });
+            }
+        });
+    }
+    
+    // Global functions for internship actions
+    window.editInternship = function(internshipId) {
+        openInternshipModal(internshipId);
+    };
+    
+    window.deleteInternship = function(internshipId) {
+        if (confirm('Are you sure you want to delete this internship?')) {
+            firebaseServices.deleteInternship(internshipId, currentUserId)
+                .then(() => {
+                    utils.showNotification('Internship deleted successfully!', 'success');
+                    loadInternships(currentUserId);
+                })
+                .catch((error) => {
+                    console.error('Error deleting internship:', error);
+                    utils.showNotification('Error deleting internship: ' + error.message, 'error');
+                });
+        }
+    };
     
     // Handle logout
     if (logoutBtn) {

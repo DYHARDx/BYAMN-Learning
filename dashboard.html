@@ -249,34 +249,182 @@
             </div>
         </div>
 
-        <!-- Courses Section -->
-        <div class="bg-white rounded-xl shadow-md">
-            <div class="px-6 py-5 border-b border-gray-200">
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                    <h2 class="text-xl font-semibold text-gray-800">My Courses</h2>
-                    <a href="courses.html" class="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition duration-300 inline-flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        Add Course
-                    </a>
-                </div>
-            </div>
-
-            <div class="p-6">
-                <div id="courses-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Courses will be loaded here dynamically -->
-                    <div class="text-center py-12">
-                        <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <!-- Tabs Navigation -->
+        <div class="bg-white rounded-xl shadow-md mb-8">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                    <button id="tab-courses" class="tab-button active py-4 px-1 border-b-2 font-medium text-sm text-indigo-600 border-indigo-600">
+                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
-                        <h3 class="mt-4 text-lg font-medium text-gray-900">No enrolled courses yet</h3>
-                        <p class="mt-2 text-gray-500">Get started by browsing our course catalog</p>
+                        My Courses
+                    </button>
+                    <button id="tab-certificates" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300">
+                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                        Certificates
+                    </button>
+                    <button id="tab-internships" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300">
+                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Internships
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Courses Tab Content -->
+        <div id="content-courses" class="tab-content">
+            <div class="bg-white rounded-xl shadow-md">
+                <div class="px-6 py-5 border-b border-gray-200">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <h2 class="text-xl font-semibold text-gray-800">My Courses</h2>
+                        <a href="courses.html" class="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition duration-300 inline-flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Course
+                        </a>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <div id="courses-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Courses will be loaded here dynamically -->
+                        <div class="text-center py-12 col-span-full">
+                            <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            <h3 class="mt-4 text-lg font-medium text-gray-900">No enrolled courses yet</h3>
+                            <p class="mt-2 text-gray-500">Get started by browsing our course catalog</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Certificates Tab Content -->
+        <div id="content-certificates" class="tab-content hidden">
+            <div class="bg-white rounded-xl shadow-md">
+                <div class="px-6 py-5 border-b border-gray-200">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <h2 class="text-xl font-semibold text-gray-800">My Certificates</h2>
+                        <p class="text-sm text-gray-500">Earned certificates from completed courses</p>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <div id="certificates-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Certificates will be loaded here dynamically -->
+                        <div class="text-center py-12 col-span-full">
+                            <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                            <h3 class="mt-4 text-lg font-medium text-gray-900">No certificates yet</h3>
+                            <p class="mt-2 text-gray-500">Complete courses to earn certificates</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Internships Tab Content -->
+        <div id="content-internships" class="tab-content hidden">
+            <div class="bg-white rounded-xl shadow-md">
+                <div class="px-6 py-5 border-b border-gray-200">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <h2 class="text-xl font-semibold text-gray-800">My Internships</h2>
+                        <button id="add-internship-btn" class="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition duration-300 inline-flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Internship
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <div id="internships-container" class="space-y-4">
+                        <!-- Internships will be loaded here dynamically -->
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <h3 class="mt-4 text-lg font-medium text-gray-900">No internships yet</h3>
+                            <p class="mt-2 text-gray-500">Add your internship experiences to showcase your achievements</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- Internship Modal -->
+    <div id="internship-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="internship-modal-title" class="text-xl font-semibold text-gray-900">Add Internship</h3>
+                <button id="close-internship-modal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="internship-form" class="p-6">
+                <input type="hidden" id="internship-id" />
+                <div class="space-y-4">
+                    <div>
+                        <label for="internship-company" class="block text-sm font-medium text-gray-700 mb-2">Company Name *</label>
+                        <input type="text" id="internship-company" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter company name">
+                    </div>
+                    <div>
+                        <label for="internship-position" class="block text-sm font-medium text-gray-700 mb-2">Position *</label>
+                        <input type="text" id="internship-position" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter position title">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="internship-start-date" class="block text-sm font-medium text-gray-700 mb-2">Start Date *</label>
+                            <input type="date" id="internship-start-date" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div id="end-date-container">
+                            <label for="internship-end-date" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                            <input type="date" id="internship-end-date" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="internship-location" class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                        <input type="text" id="internship-location" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="City, Country">
+                    </div>
+                    <div>
+                        <label for="internship-description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="internship-description" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Describe your internship experience, responsibilities, and achievements"></textarea>
+                    </div>
+                    <div>
+                        <label for="internship-skills" class="block text-sm font-medium text-gray-700 mb-2">Skills Gained</label>
+                        <input type="text" id="internship-skills" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., JavaScript, React, Node.js (comma separated)">
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="internship-current" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="internship-current" class="ml-2 block text-sm text-gray-700">Currently working here</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="internship-verified" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="internship-verified" class="ml-2 block text-sm text-gray-700">Verified by company</label>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancel-internship-btn" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition duration-300">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium transition duration-300">
+                        Save Internship
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Footer -->
         <footer data-aos-duration="1000" class="bg-neutral-900 text-white mt-24 fade-in">

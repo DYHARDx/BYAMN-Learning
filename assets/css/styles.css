@@ -3665,3 +3665,22 @@ body.theme-transition * {
     line-height: 1.5;
   }
 }
+
+/* Tab Styles */
+.tab-button {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.tab-button.active {
+  color: var(--primary-600);
+  border-bottom-color: var(--primary-600);
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease-in;
+}
+
+.tab-content.hidden {
+  display: none;
+}

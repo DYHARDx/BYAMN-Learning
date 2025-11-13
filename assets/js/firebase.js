@@ -338,5 +338,108 @@ window.firebaseServices = {
             console.error('Error deleting enrollment:', error);
             throw error;
         }
+    },
+
+    // Internship functions
+    getUserInternships: async (userId) => {
+        try {
+            const { ref, query, orderByChild, equalTo, get } = await import("firebase/database");
+            const internshipsRef = ref(rtdb, 'internships');
+            const internshipsQuery = query(internshipsRef, orderByChild('userId'), equalTo(userId));
+            const snapshot = await get(internshipsQuery);
+            const internshipsData = snapshot.val();
+
+            const internships = [];
+            if (internshipsData) {
+                Object.keys(internshipsData).forEach(key => {
+                    internships.push({ id: key, ...internshipsData[key] });
+                });
+            }
+
+            // Sort by start date (newest first)
+            internships.sort((a, b) => {
+                const dateA = new Date(a.startDate || 0);
+                const dateB = new Date(b.startDate || 0);
+                return dateB - dateA;
+            });
+
+            return internships;
+        } catch (error) {
+            console.error('Error fetching user internships:', error);
+            throw error;
+        }
+    },
+
+    addInternship: async (userId, internshipData) => {
+        try {
+            const { ref, push, set } = await import("firebase/database");
+            const internshipsRef = ref(rtdb, 'internships');
+            const newInternshipRef = push(internshipsRef);
+            
+            const internship = {
+                userId: userId,
+                ...internshipData,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            await set(newInternshipRef, internship);
+            return { id: newInternshipRef.key, ...internship };
+        } catch (error) {
+            console.error('Error adding internship:', error);
+            throw error;
+        }
+    },
+
+    updateInternship: async (internshipId, userId, internshipData) => {
+        try {
+            const { ref, get, update } = await import("firebase/database");
+            const internshipRef = ref(rtdb, 'internships/' + internshipId);
+            const snapshot = await get(internshipRef);
+            const existingData = snapshot.val();
+
+            if (!existingData) {
+                throw new Error('Internship not found');
+            }
+
+            if (existingData.userId !== userId) {
+                throw new Error('User does not have permission to update this internship');
+            }
+
+            const updatedData = {
+                ...internshipData,
+                updatedAt: new Date().toISOString()
+            };
+
+            await update(internshipRef, updatedData);
+            return { id: internshipId, ...existingData, ...updatedData };
+        } catch (error) {
+            console.error('Error updating internship:', error);
+            throw error;
+        }
+    },
+
+    deleteInternship: async (internshipId, userId) => {
+        try {
+            const { ref, get, remove } = await import("firebase/database");
+            const internshipRef = ref(rtdb, 'internships/' + internshipId);
+            const snapshot = await get(internshipRef);
+            const internshipData = snapshot.val();
+
+            if (!internshipData) {
+                throw new Error('Internship not found');
+            }
+
+            if (internshipData.userId !== userId) {
+                throw new Error('User does not have permission to delete this internship');
+            }
+
+            await remove(internshipRef);
+            console.log('Internship deleted successfully');
+            return true;
+        } catch (error) {
+            console.error('Error deleting internship:', error);
+            throw error;
+        }
     }
 };
