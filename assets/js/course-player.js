@@ -43,6 +43,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let pauseStartTime = null; // Track when user paused
     let totalPauseTime = 0; // Total time paused
     
+    // Video analytics tracking
+    let videoEvents = {
+        playEvents: 0,
+        pauseEvents: 0,
+        seekEvents: 0,
+        playbackSpeedChanges: 0,
+        maxPlaybackSpeed: 1.0,
+        minPlaybackSpeed: 1.0
+    };
+    
     // Get course ID from URL parameter
     const urlParams = new URLSearchParams(window.location.search);
     const courseId = urlParams.get('courseId');
@@ -198,6 +208,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 completed
             ).catch(error => {
                 console.error('Error updating lesson analytics:', error);
+            });
+            
+            // Update video analytics
+            firebaseServices.updateVideoAnalytics(
+                currentUser.uid,
+                currentCourse.id,
+                currentLesson.id,
+                videoEvents
+            ).catch(error => {
+                console.error('Error updating video analytics:', error);
             });
         }
     }
@@ -408,6 +428,16 @@ document.addEventListener('DOMContentLoaded', function() {
         pauseStartTime = null;
         totalPauseTime = 0;
         
+        // Reset video events tracking
+        videoEvents = {
+            playEvents: 0,
+            pauseEvents: 0,
+            seekEvents: 0,
+            playbackSpeedChanges: 0,
+            maxPlaybackSpeed: 1.0,
+            minPlaybackSpeed: 1.0
+        };
+        
         console.log('Setting minWatchTime from lesson:', lesson.minWatchTime, 'Final minWatchTime:', minWatchTime);
         
         // Load saved watched time from localStorage
@@ -531,6 +561,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 'onStateChange': onPlayerStateChange
             }
         });
+        
+        // Add event listener for seek events
+        let lastCurrentTime = 0;
+        const seekCheckInterval = setInterval(() => {
+            if (player && typeof player.getCurrentTime === 'function') {
+                const currentTime = player.getCurrentTime();
+                // Check if there's a significant jump in time (seek)
+                if (Math.abs(currentTime - lastCurrentTime) > 5) { // More than 5 seconds difference
+                    videoEvents.seekEvents++;
+                    console.log('Seek detected. Total seeks:', videoEvents.seekEvents);
+                }
+                lastCurrentTime = currentTime;
+            }
+        }, 1000); // Check every second
+        
+        // Store interval ID to clear later if needed
+        player.seekCheckInterval = seekCheckInterval;
     }
     
     // YouTube player ready event
@@ -547,6 +594,27 @@ document.addEventListener('DOMContentLoaded', function() {
             markCompleteBtn.title = "Requirement met! Click to mark as complete";
             markCompleteBtn.onclick = () => markLessonComplete(lesson.id);
             console.log('Button enabled on player ready - time requirement already met');
+        }
+        
+        // Add event listener for playback rate changes
+        if (player && typeof player.getPlaybackRate === 'function') {
+            let lastPlaybackRate = player.getPlaybackRate();
+            const rateCheckInterval = setInterval(() => {
+                if (player && typeof player.getPlaybackRate === 'function') {
+                    const currentRate = player.getPlaybackRate();
+                    if (currentRate !== lastPlaybackRate) {
+                        videoEvents.playbackSpeedChanges++;
+                        videoEvents.maxPlaybackSpeed = Math.max(videoEvents.maxPlaybackSpeed, currentRate);
+                        videoEvents.minPlaybackSpeed = Math.min(videoEvents.minPlaybackSpeed, currentRate);
+                        lastPlaybackRate = currentRate;
+                        console.log('Playback speed changed. Total changes:', videoEvents.playbackSpeedChanges, 
+                                   'Min speed:', videoEvents.minPlaybackSpeed, 'Max speed:', videoEvents.maxPlaybackSpeed);
+                    }
+                }
+            }, 1000); // Check every second
+            
+            // Store interval ID to clear later if needed
+            player.rateCheckInterval = rateCheckInterval;
         }
     }
     
@@ -568,6 +636,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 lessonStartTime = new Date();
             }
             
+            // Track play event
+            videoEvents.playEvents++;
+            
             console.log('Video started playing at:', watchStartTime);
             
             // Start continuous tracking of watched time
@@ -584,6 +655,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Track pause time
                 pauseStartTime = new Date();
+                
+                // Track pause event
+                videoEvents.pauseEvents++;
                 
                 console.log('Video paused. Watched time so far:', watchedTime, 'seconds');
                 
@@ -881,6 +955,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 watchedTime >= minWatchTime // completion status
             ).catch(error => {
                 console.error('Error saving lesson analytics:', error);
+            });
+            
+            // Save video analytics
+            firebaseServices.updateVideoAnalytics(
+                currentUser.uid,
+                courseId,
+                lessonId,
+                videoEvents
+            ).catch(error => {
+                console.error('Error saving video analytics:', error);
             });
             
             // Also update user's overall analytics
@@ -1189,11 +1273,25 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('beforeunload', function() {
         stopWatchTimeTracking();
         
+        // Clear intervals
+        if (player && player.seekCheckInterval) {
+            clearInterval(player.seekCheckInterval);
+        }
+        if (player && player.rateCheckInterval) {
+            clearInterval(player.rateCheckInterval);
+        }
+        
         // Save current watched time
         if (currentCourse && currentCourse.lessons && currentLessonIndex < currentCourse.lessons.length) {
             const currentLesson = currentCourse.lessons[currentLessonIndex];
             if (currentLesson) {
                 saveWatchedTimeToLocalStorage(courseId, currentLesson.id, watchedTime);
+                // Save detailed analytics
+                if (lessonStartTime) {
+                    const currentTime = new Date();
+                    totalLessonTime = (currentTime - lessonStartTime) / 1000; // Convert to seconds
+                    saveLessonAnalytics(courseId, currentLesson.id, totalLessonTime, watchedTime);
+                }
             }
         }
     });
