@@ -228,6 +228,25 @@
             outline: none;
         }
         
+        /* Search suggestions dropdown */
+        #search-suggestions {
+            z-index: 100;
+        }
+        
+        .suggestion-item:hover {
+            background-color: #f3f4f6;
+        }
+        
+        /* Active filters display */
+        #active-filters {
+            min-height: 32px;
+        }
+        
+        /* Advanced filters section */
+        .advanced-filters-toggle {
+            display: none;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .course-card-title {
@@ -327,22 +346,175 @@
             <p class="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">Discover our expertly crafted courses designed to help you master new skills and advance your career.</p>
         </div>
 
+        <!-- Personalized Recommendations Section -->
+        <div class="mb-12" id="recommendations-section" style="display: none;">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Recommended for You</h2>
+                <a href="dashboard.html#recommendations" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center">
+                    View All Recommendations
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="recommendations-container">
+                <!-- Recommendations will be loaded here dynamically -->
+                <div class="col-span-full text-center py-8">
+                    <div class="loading-spinner mx-auto"></div>
+                    <p class="mt-4 text-gray-700 font-semibold">Finding personalized recommendations...</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Search and Filter Section -->
         <div class="mb-12">
-            <!-- Search Bar -->
-            <div class="mb-8 max-w-2xl mx-auto">
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                        <svg class="h-6 w-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
-                        </svg>
+            <!-- Search Bar with Suggestions -->
+            <div class="mb-8 max-w-2xl mx-auto relative">
+                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                    <svg class="h-6 w-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <input 
+                    type="text" 
+                    id="course-search" 
+                    placeholder="Search courses by title, category, or instructor..." 
+                    class="block w-full pl-12 pr-12 py-5 border border-gray-300 rounded-xl bg-white text-gray-900 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 search-bar"
+                >
+                <button id="clear-search" class="absolute inset-y-0 right-0 pr-4 flex items-center" style="display: none;">
+                    <svg class="h-6 w-6 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <!-- Search Suggestions Dropdown -->
+                <div id="search-suggestions" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-lg border border-gray-200 max-h-60 overflow-auto" style="display: none;">
+                    <!-- Suggestions will be populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Active Filters Display -->
+            <div id="active-filters" class="mb-6" style="display: none;">
+                <!-- Active filters will be displayed here -->
+            </div>
+
+            <!-- Advanced Filters -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Filters</h3>
+                    <button id="reset-filters" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                        Reset all filters
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Difficulty Filter -->
+                    <div>
+                        <label for="difficulty-filter" class="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
+                        <select id="difficulty-filter" class="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="all">All Levels</option>
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                        </select>
                     </div>
-                    <input 
-                        type="text" 
-                        id="course-search" 
-                        placeholder="Search courses by title, category, or instructor..." 
-                        class="block w-full pl-12 pr-4 py-5 border border-gray-300 rounded-xl bg-white text-gray-900 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 search-bar"
-                    >
+                    
+                    <!-- Duration Filter -->
+                    <div>
+                        <label for="duration-filter" class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                        <select id="duration-filter" class="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="all">Any Duration</option>
+                            <option value="short">Short (&lt; 1 hour)</option>
+                            <option value="medium">Medium (1-3 hours)</option>
+                            <option value="long">Long (&gt; 3 hours)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Rating Filter -->
+                    <div>
+                        <label for="rating-filter" class="block text-sm font-medium text-gray-700 mb-1">Minimum Rating</label>
+                        <select id="rating-filter" class="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="0">Any Rating</option>
+                            <option value="4.5">4.5+ Stars</option>
+                            <option value="4.0">4.0+ Stars</option>
+                            <option value="3.5">3.5+ Stars</option>
+                            <option value="3.0">3.0+ Stars</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Language Filter -->
+                    <div>
+                        <label for="language-filter" class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                        <select id="language-filter" class="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="all">All Languages</option>
+                            <option value="English">English</option>
+                            <option value="Spanish">Spanish</option>
+                            <option value="French">French</option>
+                            <option value="German">German</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Filters Toggle -->
+            <div class="mb-6 text-center">
+                <button id="toggle-filters" class="inline-flex items-center text-indigo-600 font-medium hover:text-indigo-800 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                    </svg>
+                    Advanced Filters
+                </button>
+            </div>
+
+            <!-- Advanced Filters Panel -->
+            <div id="advanced-filters" class="hidden bg-white rounded-xl shadow-md p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Difficulty Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
+                        <select id="difficulty-filter" class="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="all">All Levels</option>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+
+                    <!-- Duration Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+                        <select id="duration-filter" class="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="all">Any Duration</option>
+                            <option value="short">Short (&lt; 2 hours)</option>
+                            <option value="medium">Medium (2-6 hours)</option>
+                            <option value="long">Long (6+ hours)</option>
+                        </select>
+                    </div>
+
+                    <!-- Instructor Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Instructor</label>
+                        <select id="instructor-filter" class="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="all">All Instructors</option>
+                            <!-- Instructor options will be populated dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Price Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                        <select id="price-filter" class="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="all">All Prices</option>
+                            <option value="free">Free</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Clear Filters Button -->
+                <div class="mt-6 flex justify-end">
+                    <button id="clear-filters" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        Clear All Filters
+                    </button>
                 </div>
             </div>
 
@@ -353,6 +525,11 @@
                     <!-- Category filters will be loaded here dynamically -->
                 </div>
                 
+                <!-- Results Count -->
+                <div id="results-count" class="text-sm text-gray-600 font-medium">
+                    <!-- Results count will be updated dynamically -->
+                </div>
+                
                 <!-- Sorting Dropdown -->
                 <div class="relative">
                     <select id="sort-options" class="appearance-none bg-white border border-gray-300 rounded-lg py-3 px-4 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
@@ -360,6 +537,9 @@
                         <option value="oldest">Oldest First</option>
                         <option value="enrollmentDesc">Most Enrolled</option>
                         <option value="enrollmentAsc">Least Enrolled</option>
+                        <option value="ratingDesc">Highest Rated</option>
+                        <option value="priceAsc">Price: Low to High</option>
+                        <option value="priceDesc">Price: High to Low</option>
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
