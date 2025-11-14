@@ -396,6 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Render video analytics charts
     function renderVideoAnalyticsCharts(analytics) {
+        const videoAnalyticsContainer = document.getElementById('video-analytics-container');
         if (!videoAnalyticsContainer) return;
         
         if (!analytics || !analytics.videoDetails) {
@@ -458,7 +459,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         lessonId,
                         engagement: Math.round(engagement),
                         playEvents: lesson.playEvents || 0,
-                        pauseEvents: lesson.pauseEvents || 0
+                        pauseEvents: lesson.pauseEvents || 0,
+                        seekEvents: lesson.seekEvents || 0,
+                        playbackSpeedChanges: lesson.playbackSpeedChanges || 0,
+                        maxPlaybackSpeed: lesson.maxPlaybackSpeed || 1.0,
+                        minPlaybackSpeed: lesson.minPlaybackSpeed || 1.0
                     });
                 }
             });
@@ -638,6 +643,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Render progress distribution chart
     function renderProgressChart(enrollments) {
+        const container = document.getElementById('progress-chart-container');
+        if (!container) return;
+        
         // Calculate progress distribution
         const notStarted = enrollments.filter(e => e.progress === 0).length;
         const inProgress = enrollments.filter(e => e.progress > 0 && e.progress < 100).length;
@@ -680,18 +688,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="w-4 h-4 bg-amber-500 rounded-full mr-2"></div>
                         <span class="text-sm text-gray-600">In Progress (${inProgress})</span>
                     </div>
-                    <div class="mt-2 text-center">
-                        <p class="text-xs font-medium text-gray-900">${value}</p>
-                        <p class="text-xs text-gray-500 truncate">${category}</p>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
+                        <span class="text-sm text-gray-600">Completed (${completed})</span>
                     </div>
                 </div>
-            `;
-        });
-        
-        chartHTML += `
-            </div>
-            <div class="mt-6 text-center">
-                <p class="text-sm text-gray-500">Course progress distribution</p>
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-500">Course progress distribution</p>
+                </div>
             </div>
         `;
         
@@ -941,6 +945,28 @@ document.addEventListener('DOMContentLoaded', function() {
         container.innerHTML = chartHTML;
     }
     
+    // Helper function to generate clip path for donut chart segments
+    function getClipPath(startPercent, endPercent) {
+        // Convert percentages to angles (0-360 degrees)
+        const startAngle = (startPercent / 100) * 360;
+        const endAngle = (endPercent / 100) * 360;
+        
+        // Handle full circle case
+        if (endAngle >= 359.99) {
+            return 'inset(0 0 0 0)';
+        }
+        
+        // Calculate coordinates for the clip path
+        // For simplicity, we'll use a polygon that approximates the segment
+        if (endAngle <= 180) {
+            // Simple case: less than half circle
+            return `polygon(50% 50%, 100% 50%, 100% 0%, 0% 0%, 0% 100%, 100% 100%, 100% 50%, 50% 50%)`;
+        } else {
+            // More than half circle
+            return `polygon(50% 50%, 0% 50%, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 50%, 50% 50%)`;
+        }
+    }
+
     // Render category distribution chart
     function renderCategoryChart(enrollments, courses, categoryMap) {
         // Match enrollments with courses to get categories

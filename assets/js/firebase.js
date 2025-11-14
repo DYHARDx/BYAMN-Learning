@@ -297,6 +297,33 @@ window.firebaseServices = {
         }
     },
 
+    // Function to update detailed video analytics
+    updateVideoAnalytics: async (userId, courseId, lessonId, videoEvents) => {
+        try {
+            // Update video-specific analytics
+            const videoAnalyticsRef = ref(rtdb, `userAnalytics/${userId}/videoDetails/${courseId}/${lessonId}`);
+            
+            // Get existing video analytics data
+            const snapshot = await get(videoAnalyticsRef);
+            const existingData = snapshot.val() || {};
+            
+            // Merge new events with existing data
+            const updatedData = {
+                ...existingData,
+                ...videoEvents,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            await set(videoAnalyticsRef, updatedData);
+            
+            return true;
+        } catch (error) {
+            console.error('Error updating video analytics:', error);
+            throw error;
+        }
+    },
+
+    // Function to update course completion analytics
     updateCourseCompletionAnalytics: async (userId, courseId) => {
         try {
             // Update user overall analytics
@@ -1128,6 +1155,28 @@ window.firebaseServices = {
             console.error('Error calculating user engagement score:', error);
             return 0;
         }
+    },
+    
+    // Function to calculate video engagement score
+    calculateVideoEngagementScore: (videoEvents) => {
+        if (!videoEvents) return 0;
+        
+        // Calculate engagement based on play/pause ratio and seek behavior
+        const playEvents = videoEvents.playEvents || 0;
+        const pauseEvents = videoEvents.pauseEvents || 0;
+        const seekEvents = videoEvents.seekEvents || 0;
+        
+        // Base score on play/pause ratio (more pauses might indicate more engagement)
+        const playPauseRatio = pauseEvents > 0 ? playEvents / pauseEvents : playEvents;
+        
+        // Penalty for excessive seeking (might indicate skimming)
+        const seekPenalty = Math.min(50, seekEvents * 2); // Max 50 point penalty
+        
+        // Calculate score (0-100)
+        let score = Math.min(100, playPauseRatio * 10 - seekPenalty);
+        score = Math.max(0, score); // Ensure non-negative
+        
+        return Math.round(score);
     }
 };
 
