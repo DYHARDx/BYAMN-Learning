@@ -208,71 +208,50 @@
   <body class="min-h-screen bg-theme-page">
     <!-- Header with navigation and user actions -->
     <header data-aos-duration="800" class="header">
-      <div data-aos="fade-down" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center py-4">
-          <!-- Logo and site name -->
-          <a href="#" id="logoLink" class="flex items-center cursor-pointer">
-            <div class="flex items-center">
-              <div class="flex-shrink-0 flex items-center h-10 w-10">
-                <img
-                  id="siteLogo"
-                  src="logo.png"
-                  alt="BYAMN Logo"
-                  class="h-full w-full object-contain"
-                />
-              </div>
-              <h1 class="ml-3 font-bold text-gradient-primary text-2xl">
-                BYAMN
-              </h1>
-            </div>
-          </a>
+        <div data-aos="fade-down" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4" style="width: 100%; height: 70px;">
+                <!-- Logo and site name -->
+<a href="#" id="logoLink" class="flex items-center cursor-pointer">
+    <div class="flex items-center">
+        <div class="flex-shrink-0 flex items-center h-10 w-10" style="width: 10%; height: 20px;">
+            <img id="siteLogo" src="logo.png" alt="BYAMN Logo" class="h-full w-full object-contain">
+        </div>
+        <h1 class="ml-3 font-bold text-gradient-primary text-2xl" style="margin-left: 15px;">BYAMN</h1>
+    </div>
+</a>
 
-          <!-- Desktop Navigation - hidden on mobile -->
-          <nav class="hidden md:flex space-x-1">
-            <a href="./courses.html" class="nav-link">Courses</a>
-            <a href="./about.html" class="nav-link">About</a>
-            <a href="./faq.html" class="nav-link">FAQ</a>
-            <a href="./contact.html" class="nav-link">Contact</a>
-          </nav>
 
-          <!-- User Actions Section -->
-          <div class="flex items-center space-x-3">
-            <!-- Mobile menu button - only visible on mobile -->
-            <button
-              id="mobile-menu-button"
-              class="mobile-menu-button md:hidden"
-              aria-label="Toggle menu"
-            >
-              <svg
-                class="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                  id="mobile-menu-icon-open"
-                ></path>
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                  id="mobile-menu-icon-close"
-                  class="hidden"
-                ></path>
-              </svg>
-            </button>
 
-            <!-- User-specific actions - shown only on desktop -->
-            <div id="user-actions-desktop" class="hidden md:flex space-x-3">
-              <a href="./auth/login.html" class="btn btn-outline"> Login </a>
-              <a href="./auth/register.html" class="btn btn-primary">
-                Get Started
-              </a>
+
+
+                <!-- Desktop Navigation - hidden on mobile -->
+                <nav class="hidden md:flex space-x-1">
+                    <a href="./courses.html" class="nav-link">Courses</a>
+                    <a href="./about.html" class="nav-link">About</a>
+                    <a href="./faq.html" class="nav-link">FAQ</a>
+                    <a href="./contact.html" class="nav-link">Contact</a>
+                </nav>
+
+                <!-- User Actions Section -->
+                <div class="flex items-center space-x-3">
+                    <!-- Mobile menu button - only visible on mobile -->
+                    <button id="mobile-menu-button" class="mobile-menu-button md:hidden" aria-label="Toggle menu">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" id="mobile-menu-icon-open"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" id="mobile-menu-icon-close" class="hidden"></path>
+                        </svg>
+                    </button>
+
+                    <!-- User-specific actions - shown only on desktop -->
+                    <div id="user-actions-desktop" class="hidden md:flex space-x-3">
+                        <a href="./auth/login.html" class="btn btn-outline">
+                            Login
+                        </a>
+                        <a href="./auth/register.html" class="btn btn-primary">
+                            Get Started
+                        </a>
+                    </div>
+                </div>
             </div>
           </div>
         </div>
