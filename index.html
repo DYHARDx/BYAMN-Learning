@@ -36,16 +36,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Inter font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
 
     <!-- Custom styles -->
-    <link href="./assets/css/styles.css" rel="stylesheet">
+    <link href="./assets/css/styles.css" rel="stylesheet" />
 
     <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
 
     <!-- AOS (Animate On Scroll) -->
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
 
     <!-- Firebase SDK - Using compat versions without type="module" -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -61,102 +67,123 @@
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eef2ff',
-                            100: '#e0e7ff',
-                            200: '#c7d2fe',
-                            300: '#a5b4fc',
-                            400: '#818cf8',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                            800: '#3730a3',
-                            900: '#312e81',
-                        },
-                        secondary: {
-                            50: '#f5f3ff',
-                            100: '#ede9fe',
-                            200: '#ddd6fe',
-                            300: '#c4b5fd',
-                            400: '#a78bfa',
-                            500: '#8b5cf6',
-                            600: '#7c3aed',
-                            700: '#6d28d9',
-                            800: '#5b21b6',
-                            900: '#4c1d95',
-                        }
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: '#eef2ff',
+                100: '#e0e7ff',
+                200: '#c7d2fe',
+                300: '#a5b4fc',
+                400: '#818cf8',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+                800: '#3730a3',
+                900: '#312e81',
+              },
+              secondary: {
+                50: '#f5f3ff',
+                100: '#ede9fe',
+                200: '#ddd6fe',
+                300: '#c4b5fd',
+                400: '#a78bfa',
+                500: '#8b5cf6',
+                600: '#7c3aed',
+                700: '#6d28d9',
+                800: '#5b21b6',
+                900: '#4c1d95',
+              },
+            },
+          },
+        },
+      };
     </script>
 
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        }
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue',
+          sans-serif;
+      }
 
-        .delay-100 {
-            animation-delay: 0.1s;
-        }
+      .delay-100 {
+        animation-delay: 0.1s;
+      }
 
-        .delay-150 {
-            animation-delay: 0.15s;
-        }
+      .delay-150 {
+        animation-delay: 0.15s;
+      }
 
-        .delay-200 {
-            animation-delay: 0.2s;
-        }
+      .delay-200 {
+        animation-delay: 0.2s;
+      }
 
-        .delay-300 {
-            animation-delay: 0.3s;
-        }
+      .delay-300 {
+        animation-delay: 0.3s;
+      }
 
-        .delay-400 {
-            animation-delay: 0.4s;
-        }
+      .delay-400 {
+        animation-delay: 0.4s;
+      }
 
-        .delay-500 {
-            animation-delay: 0.5s;
-        }
+      .delay-500 {
+        animation-delay: 0.5s;
+      }
 
-        .delay-600 {
-            animation-delay: 0.6s;
-        }
+      .delay-600 {
+        animation-delay: 0.6s;
+      }
 
-        /* Enhanced hero section */
-        .hero {
-            background: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
-        }
+      /* Enhanced hero section */
+      .hero {
+        background: linear-gradient(
+          135deg,
+          var(--primary-50) 0%,
+          var(--secondary-50) 100%
+        );
+      }
 
-        .dark .hero {
-            background: linear-gradient(135deg, var(--primary-900) 0%, var(--secondary-900) 100%);
-        }
+      .dark .hero {
+        background: linear-gradient(
+          135deg,
+          var(--primary-900) 0%,
+          var(--secondary-900) 100%
+        );
+      }
 
-        /* Enhanced feature cards */
-        .feature-card {
-            transition: all var(--transition-medium) ease;
-            border: 1px solid var(--border-card);
-        }
+      /* Enhanced feature cards */
+      .feature-card {
+        transition: all var(--transition-medium) ease;
+        border: 1px solid var(--border-card);
+      }
 
-        .feature-card:hover {
-            transform: translateY(-8px);
-            box-shadow: var(--shadow-xl);
-        }
+      .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-xl);
+      }
 
-        /* Enhanced course cards */
-        .course-card {
-            transition: all var(--transition-medium) ease;
-        }
+      /* Enhanced course cards */
+      .course-card {
+        transition: all var(--transition-medium) ease;
+      }
 
-        .course-card:hover {
-            transform: translateY(-8px);
-            box-shadow: var(--shadow-xl);
+      .course-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-xl);
+      }
+      .cursor {
+        display: inline-block;
+        animation: blink 0.7s infinite;
+        color: #acb1f0;
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0;
         }
+      }
     </style>
 </head>
 
@@ -168,7 +195,7 @@
                 <!-- Logo and site name -->
 <a href="#" id="logoLink" class="flex items-center cursor-pointer">
     <div class="flex items-center">
-        <div class="flex-shrink-0 flex items-center h-10 w-10" style="width: 10%; height: 20px;">
+        <div class="flex-shrink-0 flex items-center h-10 w-10" style="width: 40%; height: 60px;">
             <img id="siteLogo" src="logo.png" alt="BYAMN Logo" class="h-full w-full object-contain">
         </div>
         <h1 class="ml-3 font-bold text-gradient-primary text-2xl" style="margin-left: 15px;">BYAMN</h1>
@@ -209,32 +236,46 @@
                         </a>
                     </div>
                 </div>
-            </div>
-
-            <!-- Mobile Navigation - only visible when menu is open -->
-            <div id="mobile-menu" class="md:hidden py-4 border-t border-theme-divider hidden">
-                <div class="flex flex-col space-y-3">
-                    <a href="./courses.html" class="nav-link">Courses</a>
-                    <a href="./about.html" class="nav-link">About</a>
-                    <a href="./faq.html" class="nav-link">FAQ</a>
-                    <a href="./contact.html" class="nav-link">Contact</a>
-
-                    <!-- Mobile user actions -->
-                    <div id="user-actions-mobile" class="pt-4 border-t border-theme-divider space-y-3">
-                        <a href="./auth/login.html" class="block w-full text-center btn btn-outline">
-                            Login
-                        </a>
-                        <a href="./auth/register.html" class="block w-full text-center btn btn-primary">
-                            Get Started
-                        </a>
-                    </div>
-                </div>
-            </div>
+            </div> 
+          </div> 
         </div>
+
+        <!-- Mobile Navigation - only visible when menu is open -->
+        <div
+          id="mobile-menu"
+          class="md:hidden py-4 border-t border-theme-divider hidden"
+        >
+          <div class="flex flex-col space-y-3">
+            <a href="./courses.html" class="nav-link">Courses</a>
+            <a href="./about.html" class="nav-link">About</a>
+            <a href="./faq.html" class="nav-link">FAQ</a>
+            <a href="./contact.html" class="nav-link">Contact</a>
+
+            <!-- Mobile user actions -->
+            <div
+              id="user-actions-mobile"
+              class="pt-4 border-t border-theme-divider space-y-3"
+            >
+              <a
+                href="./auth/login.html"
+                class="block w-full text-center btn btn-outline"
+              >
+                Login
+              </a>
+              <a
+                href="./auth/register.html"
+                class="block w-full text-center btn btn-primary"
+              >
+                Get Started
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </header>
 
     <!-- Hero Section -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
         <div class="text-center fade-in-up hero rounded-3xl p-8 md:p-16 relative overflow-hidden">
             <!-- Decorative elements -->
             <div data-aos="fade-in"
@@ -247,159 +288,257 @@
                 class="absolute bottom-10 left-1/2 w-64 h-64 bg-primary-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000">
             </div>
 
-            <div data-aos="zoom-in" class="relative z-10">
-                <h1 class="hero-title text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight">
-                    Transform Your Future with
-                    <span class="block text-gradient-primary mt-3">Expert-Led Learning</span>
-                </h1>
-                <p class="hero-subtitle fade-in-up delay-100 text-lg md:text-xl max-w-3xl mx-auto mt-6 text-theme-body">
-                    Discover and master new skills with our comprehensive courses designed by industry experts.
-                    Learn at your own pace with interactive content and real-world projects.
-                </p>
+        <div data-aos="zoom-in" class="relative z-10">
+          <div class="flex justify-center items-center mb-6 ">
+            <span
+              class="text-4xl md:text-5xl lg:text-6xl text-gradient-primary"
+              id="text"
+            ></span>
+            <span class="text-4xl md:text-5xl lg:text-6xl cursor">|</span>
+          </div>
+          <h1
+            class="hero-title text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight"
+          >
+            Transform Your Future with
+            <span class="block text-gradient-primary mt-3"
+              >Expert-Led Learning</span
+            >
+          </h1>
+          <p
+            class="hero-subtitle fade-in-up delay-100 text-lg md:text-xl max-w-3xl mx-auto mt-6 text-theme-body"
+          >
+            Discover and master new skills with our comprehensive courses
+            designed by industry experts. Learn at your own pace with
+            interactive content and real-world projects.
+          </p>
 
-                <div class="flex flex-col sm:flex-row justify-center gap-4 fade-in-up delay-150 mt-10">
-                    <a href="./auth/register.html"
-                        class="btn btn-primary btn-lg hover-lift px-8 py-4 text-lg font-semibold">
-                        Get Started - It's Free
-                        <svg class="h-5 w-5 ml-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                    </a>
-                    <a href="https://forms.gle/QzSJuSwhT6veFKpS7"
-                        class="btn btn-secondary btn-lg flex items-center justify-center hover-lift px-8 py-4 text-lg font-semibold">
-                        <svg class="h-5 w-5 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Submit Course
-                    </a>
-                </div>
+          <div
+            class="flex flex-col sm:flex-row justify-center gap-4 fade-in-up delay-150 mt-10"
+          >
+            <a
+              href="./auth/register.html"
+              class="btn btn-primary btn-lg hover-lift px-8 py-4 text-lg font-semibold"
+            >
+              Get Started - It's Free
+              <svg
+                class="h-5 w-5 ml-2 inline-block"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
+              </svg>
+            </a>
+            <a
+              href="https://forms.gle/QzSJuSwhT6veFKpS7"
+              class="btn btn-secondary btn-lg flex items-center justify-center hover-lift px-8 py-4 text-lg font-semibold"
+            >
+              <svg
+                class="h-5 w-5 mr-2 text-primary-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Submit Course
+            </a>
+          </div>
 
-                <!-- Trust indicators -->
-                <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6 text-theme-muted">
-                    <div class="flex items-center">
-                        <svg class="h-5 w-5 text-success-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        <span>100% Free Certificates</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="h-5 w-5 text-success-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        <span>200+ Courses</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="h-5 w-5 text-success-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        <span>Trusted by 50K+ Students</span>
-                    </div>
-                </div>
+          <!-- Trust indicators -->
+          <div
+            class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6 text-theme-muted"
+          >
+            <div class="flex items-center">
+              <svg
+                class="h-5 w-5 text-success-500 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>100% Free Certificates</span>
             </div>
+            <div class="flex items-center">
+              <svg
+                class="h-5 w-5 text-success-500 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>200+ Courses</span>
+            </div>
+            <div class="flex items-center">
+              <svg
+                class="h-5 w-5 text-success-500 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>Trusted by 50K+ Students</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Features Section -->
+      <div class="mt-24 fade-in-up delay-300">
+        <div data-aos="fade-in" class="text-center mb-16">
+          <h2 class="typography-h1 text-theme-heading mb-4">
+            Why Choose BYAMN?
+          </h2>
+          <p class="max-w-2xl mx-auto typography-body-large text-theme-body">
+            We provide the tools and resources you need to succeed in your
+            learning journey
+          </p>
         </div>
 
-        <!-- Features Section -->
-        <div class="mt-24 fade-in-up delay-300">
-            <div data-aos="fade-in" class="text-center mb-16">
-                <h2 class="typography-h1 text-theme-heading mb-4">Why Choose BYAMN?</h2>
-                <p class="max-w-2xl mx-auto typography-body-large text-theme-body">
-                    We provide the tools and resources you need to succeed in your learning journey
-                </p>
+        <div data-aos="fade-up" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Feature 1 -->
+          <div class="feature-card fade-in-up hover-lift">
+            <div class="feature-icon feature-icon-primary">
+              <svg
+                class="h-8 w-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                />
+              </svg>
             </div>
+            <h3 class="feature-title">Expert Instructors</h3>
+            <p class="feature-description">
+              Learn from industry professionals with years of experience in
+              their respective fields.
+            </p>
+          </div>
 
-            <div data-aos="fade-up" class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Feature 1 -->
-                <div class="feature-card fade-in-up hover-lift">
-                    <div class="feature-icon feature-icon-primary">
-                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Expert Instructors</h3>
-                    <p class="feature-description">
-                        Learn from industry professionals with years of experience in their respective fields.
-                    </p>
-                </div>
-
-                <!-- Feature 2 -->
-                <div class="feature-card fade-in-up delay-100 hover-lift">
-                    <div class="feature-icon feature-icon-secondary">
-                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Flexible Learning</h3>
-                    <p class="feature-description">
-                        Study at your own pace with 24/7 access to course materials from any device.
-                    </p>
-                </div>
-
-                <!-- Feature 3 -->
-                <div class="feature-card fade-in-up delay-200 hover-lift">
-                    <div class="feature-icon feature-icon-success">
-                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-18 0 11.955 11.955 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Certification</h3>
-                    <p class="feature-description">
-                        Earn recognized certificates upon course completion to showcase your new skills.
-                    </p>
-                </div>
+          <!-- Feature 2 -->
+          <div class="feature-card fade-in-up delay-100 hover-lift">
+            <div class="feature-icon feature-icon-secondary">
+              <svg
+                class="h-8 w-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
             </div>
+            <h3 class="feature-title">Flexible Learning</h3>
+            <p class="feature-description">
+              Study at your own pace with 24/7 access to course materials from
+              any device.
+            </p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="feature-card fade-in-up delay-200 hover-lift">
+            <div class="feature-icon feature-icon-success">
+              <svg
+                class="h-8 w-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-18 0 11.955 11.955 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h3 class="feature-title">Certification</h3>
+            <p class="feature-description">
+              Earn recognized certificates upon course completion to showcase
+              your new skills.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Section -->
+      <div class="mt-24 fade-in-up delay-400">
+        <div data-aos="fade-in" class="text-center mb-16">
+          <h2 class="typography-h1 text-theme-heading mb-4">
+            Trusted by Thousands
+          </h2>
+          <p class="max-w-2xl mx-auto typography-body-large text-theme-body">
+            Join our community of learners and professionals
+          </p>
         </div>
 
-        <!-- Stats Section -->
-        <div class="mt-24 fade-in-up delay-400">
-            <div data-aos="fade-in" class="text-center mb-16">
-                <h2 class="typography-h1 text-theme-heading mb-4">Trusted by Thousands</h2>
-                <p class="max-w-2xl mx-auto typography-body-large text-theme-body">
-                    Join our community of learners and professionals
-                </p>
-            </div>
+        <div data-aos="fade-up" class="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div class="stat-card">
+            <div class="stat-value">50K+</div>
+            <div class="stat-label">Active Students</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">200+</div>
+            <div class="stat-label">Courses Available</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">95%</div>
+            <div class="stat-label">Job Placement Rate</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">10K+</div>
+            <div class="stat-label">Success Stories</div>
+          </div>
+        </div>
+      </div>
 
-            <div data-aos="fade-up" class="grid grid-cols-2 md:grid-cols-4 gap-8">
-                <div class="stat-card">
-                    <div class="stat-value">50K+</div>
-                    <div class="stat-label">Active Students</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">200+</div>
-                    <div class="stat-label">Courses Available</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">95%</div>
-                    <div class="stat-label">Job Placement Rate</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">10K+</div>
-                    <div class="stat-label">Success Stories</div>
-                </div>
-            </div>
+      <!-- Popular Courses Section -->
+      <div class="mt-24 fade-in-up delay-500">
+        <div data-aos="fade-in" class="text-center mb-16">
+          <h2 class="typography-h1 text-theme-heading mb-4">Popular Courses</h2>
+          <p class="max-w-2xl mx-auto typography-body-large text-theme-body">
+            Discover our most enrolled courses loved by thousands of students
+          </p>
         </div>
 
-        <!-- Popular Courses Section -->
-        <div class="mt-24 fade-in-up delay-500">
-            <div data-aos="fade-in" class="text-center mb-16">
-                <h2 class="typography-h1 text-theme-heading mb-4">Popular Courses</h2>
-                <p class="max-w-2xl mx-auto typography-body-large text-theme-body">
-                    Discover our most enrolled courses loved by thousands of students
-                </p>
-            </div>
+       
 
             <div data-aos="fade-up" class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Course 1 -->
@@ -499,9 +638,14 @@
                             </button>
                         </div>
                     </div>
-                </div>
+               
+              
             </div>
+          </div>
+ 
+ 
         </div>
+      </div>
     </main>
 
     <!-- Reviews Section -->
@@ -524,6 +668,12 @@
                 <div id="recent-reviews" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </div>
         </div>
+
+        <!-- Reviews Summary -->
+        <div id="reviews-summary" class="mb-12"></div>
+
+        
+      </div>
     </section>
 
     <!-- Footer -->
@@ -598,8 +748,10 @@
                                 Service</a></li>
                     </ul>
                 </div>
-            </div>
+              
+          </div>
 
+          
             <div class="border-t border-neutral-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
                 <p class="text-neutral-300">© 2025 BYAMN. All rights reserved.</p>
                 <div class="flex space-x-6 mt-4 md:mt-0">
@@ -633,14 +785,17 @@
                 </div>
             </div>
         </div>
+
+        
+      </div>
     </footer>
 
     <!-- Initialize AOS -->
     <script>
-        AOS.init({
-            duration: 1200, // optional: animation duration in ms
-            once: true      // optional: run animation only once
-        });
+      AOS.init({
+        duration: 1200, // optional: animation duration in ms
+        once: true, // optional: run animation only once
+      });
     </script>
 
     <!-- Main JavaScript -->
